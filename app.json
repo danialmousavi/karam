@@ -28,7 +28,8 @@
     },
     "plugins": [
       "expo-sqlite",
-      "expo-router"
+      "expo-router",
+      "expo-font"
     ]
   }
 }
