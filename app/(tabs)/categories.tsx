@@ -14,15 +14,16 @@ import { Feather } from '@expo/vector-icons';
 import { colors } from '../../theme/colors';
 import { db, Category, Task } from '../../services/database';
 import { useIsFocused } from '@react-navigation/native';
-import CustomAlert from '../../components/CustomAlert'; // 👈 ایمپورت آلرت اختصاصی جدید
+import CustomAlert from '../../components/CustomAlert';
 
+// پالت رنگی جدید: پاستیلی اما پررنگ و جون‌دارتر 🎨
 const PASTEL_PALETTE = [
-  { color: '#F3E5F5', textColor: '#6A1B9A' }, 
-  { color: '#E3F2FD', textColor: '#1565C0' }, 
-  { color: '#E8F5E9', textColor: '#2E7D32' }, 
-  { color: '#FFF3E0', textColor: '#E65100' }, 
-  { color: '#FCE4EC', textColor: '#C2185B' }, 
-  { color: '#E0F7FA', textColor: '#006064' }, 
+  { color: '#CE93D8', textColor: '#4A148C' }, // بنفش
+  { color: '#90CAF9', textColor: '#0D47A1' }, // آبی
+  { color: '#A5D6A7', textColor: '#1B5E20' }, // سبز پررنگ
+  { color: '#FFCC80', textColor: '#E65100' }, // نارنجی
+  { color: '#F48FB1', textColor: '#880E4F' }, // صورتی
+  { color: '#80DEEA', textColor: '#006064' }, // فیروزه‌ای
 ];
 
 const AVAILABLE_ICONS = ['user', 'briefcase', 'activity', 'shopping-bag', 'book', 'heart', 'coffee', 'gift', 'star'];
@@ -37,7 +38,6 @@ export default function CategoriesScreen() {
   const [selectedColorIndex, setSelectedColorIndex] = useState(0);
   const [selectedIcon, setSelectedIcon] = useState('user');
 
-  // 🛠️ مدیریت استیت آلرت پاستیلی جدید
   const [alertConfig, setAlertConfig] = useState<{
     visible: boolean;
     type: 'success' | 'danger' | 'warning';
@@ -62,35 +62,31 @@ export default function CategoriesScreen() {
   };
 
   useEffect(() => {
-    if (isFocused) {
-      loadData();
-    }
+    if (isFocused) loadData();
   }, [isFocused]);
 
-  // نمایش آلرت شخصی‌سازی شده برای حذف
   const handleDeleteRequest = (id: string, categoryName: string) => {
     setAlertConfig({
       visible: true,
       type: 'danger',
       title: 'حذف دسته‌بندی؟ 🗑️',
-      message: `آیا مطمئنید می‌خواهید "${categoryName}" را حذف کنید؟ تمام کارهای مربوط به این دسته نیز برای همیشه حذف خواهند شد.`,
+      message: `آیا مطمئنید می‌خواهید "${categoryName}" را حذف کنید؟ تمام کارهای مربوط به این دسته نیز حذف خواهند شد.`,
       showCancel: true,
       onConfirm: async () => {
         await db.deleteCategory(id);
-        setAlertConfig(prev => ({ ...prev, visible: false })); // بستن آلرت
+        setAlertConfig(prev => ({ ...prev, visible: false }));
         loadData();
       }
     });
   };
 
-  // ذخیره دسته جدید با کنترل خطاهای زیبا
   const handleCreateCategory = async () => {
     if (!name.trim()) {
       setAlertConfig({
         visible: true,
         type: 'warning',
         title: 'نام دسته خالیه! ⚠️',
-        message: 'برای ساختن دسته‌بندی، حتماً باید یک اسم خوشگل براش انتخاب کنی.',
+        message: 'برای ساختن دسته‌بندی، حتماً باید یک اسم براش انتخاب کنی.',
         showCancel: false,
         onConfirm: () => setAlertConfig(prev => ({ ...prev, visible: false }))
       });
@@ -110,20 +106,19 @@ export default function CategoriesScreen() {
     setSelectedIcon('user');
     setModalVisible(false);
     
-    // نمایش آلرت موفقیت بعد از ثبت موفق
     setTimeout(() => {
       setAlertConfig({
         visible: true,
         type: 'success',
         title: 'با موفقیت ثبت شد! 🎉',
-        message: `دسته‌بندی "${name.trim()}" ساخته شد. حالا می‌تونی براش کارهای جدید بنویسی.`,
+        message: `دسته‌بندی "${name.trim()}" ساخته شد.`,
         showCancel: false,
         onConfirm: () => {
           setAlertConfig(prev => ({ ...prev, visible: false }));
           loadData();
         }
       });
-    }, 400); // تاخیر کوچک برای بسته شدن تمیز مودال قبلی
+    }, 400);
   };
 
   const getTaskCount = (categoryId: string) => {
@@ -149,7 +144,6 @@ export default function CategoriesScreen() {
               <View style={[styles.iconWrapper, { backgroundColor: 'rgba(255,255,255,0.6)' }]}>
                 <Feather name={item.icon as any} size={20} color={item.textColor} />
               </View>
-              {/* با زدن دکمه حذف، آلرت جدید نمایش داده می‌شود */}
               <TouchableOpacity onPress={() => handleDeleteRequest(item.id, item.name)} style={styles.deleteButton}>
                 <Feather name="trash-2" size={16} color={item.textColor} />
               </TouchableOpacity>
@@ -162,21 +156,11 @@ export default function CategoriesScreen() {
         )}
       />
 
-      <TouchableOpacity 
-        style={styles.fab} 
-        onPress={() => setModalVisible(true)}
-        activeOpacity={0.8}
-      >
+      <TouchableOpacity style={styles.fab} onPress={() => setModalVisible(true)} activeOpacity={0.8}>
         <Feather name="plus" size={24} color="#FFF" />
       </TouchableOpacity>
 
-      {/* مودال ساخت دسته‌بندی جدید */}
-      <Modal
-        visible={modalVisible}
-        animationType="slide"
-        transparent={true}
-        onRequestClose={() => setModalVisible(false)}
-      >
+      <Modal visible={modalVisible} animationType="slide" transparent={true} onRequestClose={() => setModalVisible(false)}>
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>ایجاد دسته‌بندی جدید ✨</Text>
@@ -190,7 +174,12 @@ export default function CategoriesScreen() {
             />
 
             <Text style={styles.sectionLabel}>انتخاب آیکون:</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.horizontalScroll}>
+            <ScrollView 
+              horizontal 
+              showsHorizontalScrollIndicator={false} 
+              style={styles.horizontalScroll}
+              contentContainerStyle={styles.horizontalScrollContent} // 👈 حل مشکل اسکرول
+            >
               {AVAILABLE_ICONS.map((iconName) => (
                 <TouchableOpacity
                   key={iconName}
@@ -221,16 +210,10 @@ export default function CategoriesScreen() {
             </View>
 
             <View style={styles.modalButtons}>
-              <TouchableOpacity 
-                style={[styles.btn, styles.btnCancel]} 
-                onPress={() => setModalVisible(false)}
-              >
+              <TouchableOpacity style={[styles.btn, styles.btnCancel]} onPress={() => setModalVisible(false)}>
                 <Text style={styles.btnCancelText}>انصراف</Text>
               </TouchableOpacity>
-              <TouchableOpacity 
-                style={[styles.btn, styles.btnSave]} 
-                onPress={handleCreateCategory}
-              >
+              <TouchableOpacity style={[styles.btn, styles.btnSave]} onPress={handleCreateCategory}>
                 <Text style={styles.btnSaveText}>ثبت دسته</Text>
               </TouchableOpacity>
             </View>
@@ -238,7 +221,6 @@ export default function CategoriesScreen() {
         </View>
       </Modal>
 
-      {/* 🔮 کامپوننت آلرت جادویی و پاستیلی ما 👇 */}
       <CustomAlert
         visible={alertConfig.visible}
         type={alertConfig.type}
@@ -247,184 +229,39 @@ export default function CategoriesScreen() {
         showCancel={alertConfig.showCancel}
         onConfirm={alertConfig.onConfirm}
         onCancel={() => setAlertConfig(prev => ({ ...prev, visible: false }))}
-        confirmText="بله، مطمئنم"
-        cancelText="بی‌خیال"
       />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#FAFAFA',
-    paddingTop: Platform.OS === 'ios' ? 60 : 40,
-  },
-  header: {
-    paddingHorizontal: 24,
-    marginBottom: 20,
-  },
-  headerTitle: {
-    fontFamily: 'Vazir-Bold',
-    fontSize: 24,
-    color: colors.primaryDark,
-    textAlign: 'right',
-  },
-  headerSubtitle: {
-    fontFamily: 'Vazir-Bold',
-    fontSize: 13,
-    color: colors.textMuted,
-    textAlign: 'right',
-    marginTop: 4,
-  },
-  listContainer: {
-    paddingHorizontal: 16,
-    paddingBottom: 120,
-  },
-  row: {
-    justifyContent: 'space-between',
-  },
-  card: {
-    flex: 1,
-    height: 120,
-    margin: 8,
-    borderRadius: 20,
-    padding: 14,
-    justifyContent: 'space-between',
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowRadius: 5,
-    shadowOffset: { width: 0, height: 3 },
-  },
-  cardHeader: {
-    flexDirection: 'row-reverse',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  iconWrapper: {
-    width: 36,
-    height: 36,
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  deleteButton: {
-    padding: 4,
-  },
-  cardTitle: {
-    fontFamily: 'Vazir-Bold',
-    fontSize: 16,
-    textAlign: 'right',
-    marginTop: 8,
-  },
-  cardCount: {
-    fontFamily: 'Vazir-Bold',
-    fontSize: 11,
-    textAlign: 'right',
-    opacity: 0.8,
-  },
-  fab: {
-    position: 'absolute',
-    bottom: Platform.OS === 'ios' ? 115 : 105,
-    left: 28,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: colors.primaryDark,
-    justifyContent: 'center',
-    alignItems: 'center',
-    elevation: 5,
-    shadowColor: colors.primaryDark,
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 4 },
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.4)',
-    justifyContent: 'flex-end',
-  },
-  modalContent: {
-    backgroundColor: '#FFF',
-    borderTopLeftRadius: 30,
-    borderTopRightRadius: 30,
-    padding: 24,
-    minHeight: 450,
-  },
-  modalTitle: {
-    fontFamily: 'Vazir-Bold',
-    fontSize: 18,
-    color: colors.primaryDark,
-    textAlign: 'right',
-    marginBottom: 20,
-  },
-  input: {
-    backgroundColor: '#F5F5F5',
-    borderRadius: 14,
-    padding: 14,
-    fontFamily: 'Vazir-Bold',
-    fontSize: 14,
-    textAlign: 'right',
-    color: colors.primaryDark,
-    marginBottom: 16,
-  },
-  sectionLabel: {
-    fontFamily: 'Vazir-Bold',
-    fontSize: 13,
-    color: colors.primaryDark,
-    textAlign: 'right',
-    marginBottom: 10,
-  },
-  horizontalScroll: {
-    flexDirection: 'row',
-    marginBottom: 20,
-  },
-  iconSelect: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    backgroundColor: '#F5F5F5',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginLeft: 10,
-  },
-  colorPalette: {
-    flexDirection: 'row-reverse',
-    justifyContent: 'space-between',
-    marginBottom: 30,
-  },
-  colorCircle: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-  },
-  modalButtons: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  btn: {
-    flex: 1,
-    height: 48,
-    borderRadius: 14,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  btnCancel: {
-    backgroundColor: '#F5F5F5',
-    marginRight: 10,
-  },
-  btnCancelText: {
-    fontFamily: 'Vazir-Bold',
-    fontSize: 14,
-    color: colors.textMuted,
-  },
-  btnSave: {
-    backgroundColor: colors.primaryDark,
-  },
-  btnSaveText: {
-    fontFamily: 'Vazir-Bold',
-    fontSize: 14,
-    color: '#FFF',
-  },
+  container: { flex: 1, backgroundColor: '#FAFAFA', paddingTop: Platform.OS === 'ios' ? 60 : 40 },
+  header: { paddingHorizontal: 24, marginBottom: 20 },
+  headerTitle: { fontFamily: 'Vazir-Bold', fontSize: 24, color: colors.primaryDark, textAlign: 'right' },
+  headerSubtitle: { fontFamily: 'Vazir-Bold', fontSize: 13, color: colors.textMuted, textAlign: 'right', marginTop: 4 },
+  listContainer: { paddingHorizontal: 16, paddingBottom: 120 },
+  row: { justifyContent: 'space-between' },
+  card: { flex: 1, height: 120, margin: 8, borderRadius: 20, padding: 14, justifyContent: 'space-between', elevation: 2, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 5, shadowOffset: { width: 0, height: 3 } },
+  cardHeader: { flexDirection: 'row-reverse', justifyContent: 'space-between', alignItems: 'center' },
+  iconWrapper: { width: 36, height: 36, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
+  deleteButton: { padding: 4 },
+  cardTitle: { fontFamily: 'Vazir-Bold', fontSize: 16, textAlign: 'right', marginTop: 8 },
+  cardCount: { fontFamily: 'Vazir-Bold', fontSize: 11, textAlign: 'right', opacity: 0.8 },
+  fab: { position: 'absolute', bottom: Platform.OS === 'ios' ? 115 : 105, left: 28, width: 56, height: 56, borderRadius: 28, backgroundColor: colors.primaryDark, justifyContent: 'center', alignItems: 'center', elevation: 5, shadowColor: colors.primaryDark, shadowOpacity: 0.3, shadowRadius: 8, shadowOffset: { width: 0, height: 4 } },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' },
+  modalContent: { backgroundColor: '#FFF', borderTopLeftRadius: 30, borderTopRightRadius: 30, padding: 24, minHeight: 450 },
+  modalTitle: { fontFamily: 'Vazir-Bold', fontSize: 18, color: colors.primaryDark, textAlign: 'right', marginBottom: 20 },
+  input: { backgroundColor: '#F5F5F5', borderRadius: 14, padding: 14, fontFamily: 'Vazir-Bold', fontSize: 14, textAlign: 'right', color: colors.primaryDark, marginBottom: 16 },
+  sectionLabel: { fontFamily: 'Vazir-Bold', fontSize: 13, color: colors.primaryDark, textAlign: 'right', marginBottom: 10 },
+  horizontalScroll: { marginBottom: 20 },
+  horizontalScrollContent: { flexDirection: 'row-reverse', alignItems: 'center', paddingHorizontal: 4 },
+  iconSelect: { width: 44, height: 44, borderRadius: 12, backgroundColor: '#F5F5F5', justifyContent: 'center', alignItems: 'center', marginLeft: 10 },
+  colorPalette: { flexDirection: 'row-reverse', justifyContent: 'space-between', marginBottom: 30 },
+  colorCircle: { width: 36, height: 36, borderRadius: 18 },
+  modalButtons: { flexDirection: 'row', justifyContent: 'space-between' },
+  btn: { flex: 1, height: 48, borderRadius: 14, justifyContent: 'center', alignItems: 'center' },
+  btnCancel: { backgroundColor: '#F5F5F5', marginRight: 10 },
+  btnCancelText: { fontFamily: 'Vazir-Bold', fontSize: 14, color: colors.textMuted },
+  btnSave: { backgroundColor: colors.primaryDark },
+  btnSaveText: { fontFamily: 'Vazir-Bold', fontSize: 14, color: '#FFF' },
 });
