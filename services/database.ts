@@ -41,18 +41,22 @@ export const db = {
     }
   },
 
-  addTask: async (task: Omit<Task, 'id' | 'completed'>): Promise<Task> => {
+addTask: async (task: Omit<Task, 'id' | 'completed' | 'date'> & { dates: string[] }): Promise<Task[]> => {
     try {
       const tasks = await db.getTasks();
-      const newTask: Task = {
-        ...task,
-        id: Date.now().toString(),
+      
+      // برای هر روزی که کاربر انتخاب کرده، یک تسک مجزا می‌سازیم
+      const newTasks: Task[] = task.dates.map((dateString, index) => ({
+        title: task.title,
+        categoryId: task.categoryId,
         completed: false,
-        date: task.date || moment().format('jYYYY/jMM/jDD'),
-      };
-      const updatedTasks = [newTask, ...tasks];
+        date: dateString,
+        id: Date.now().toString() + index.toString(), // ایجاد آیدی یکتا برای هر تسک
+      }));
+
+      const updatedTasks = [...newTasks, ...tasks];
       await AsyncStorage.setItem(TASKS_KEY, JSON.stringify(updatedTasks));
-      return newTask;
+      return newTasks;
     } catch (e) {
       console.error('خطا در ذخیره تسک:', e);
       throw e;
