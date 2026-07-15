@@ -1,7 +1,7 @@
 import React, { useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Animated } from 'react-native';
 import Swipeable from 'react-native-gesture-handler/Swipeable';
-import { colors } from '../theme/colors'; // وارد کردن تم
+import { colors } from '../theme/colors';
 
 interface TaskItemProps {
   task: {
@@ -18,13 +18,12 @@ export default function TaskItem({ task, onDelete, onToggleStatus }: TaskItemPro
   const swipeableRef = useRef<Swipeable>(null);
 
   const handleToggle = () => {
+    // مستقیماً وضعیت را تغییر می‌دهیم، کلید (key) بقیه کارها را می‌کند
     onToggleStatus(task.id, task.status);
-    swipeableRef.current?.close();
   };
 
   const handleDelete = () => {
-    swipeableRef.current?.close();
-    setTimeout(() => onDelete(task.id), 200); 
+    onDelete(task.id);
   };
 
   const renderRightActions = (progress: any, dragX: any) => {
@@ -49,13 +48,14 @@ export default function TaskItem({ task, onDelete, onToggleStatus }: TaskItemPro
 
   return (
     <Swipeable
+      // 👈 ترفند طلایی: با هر بار تغییر وضعیت، این کامپوننت نوسازی می‌شود
+      key={`${task.id}-${task.status}`} 
       ref={swipeableRef}
       renderRightActions={renderRightActions}
       renderLeftActions={renderLeftActions}
       friction={2}
     >
       <View style={[styles.taskContainer, isCompleted && styles.taskCompleted]}>
-        {/* یک نشانگر رنگی کنار هر تسک */}
         <View style={[styles.indicator, isCompleted && styles.indicatorCompleted]} />
         <View style={styles.textContainer}>
           <Text style={[styles.taskTitle, isCompleted && styles.textCompleted]}>
@@ -75,12 +75,12 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     flexDirection: 'row-reverse',
     alignItems: 'center',
-    elevation: 2, // سایه در اندروید
-    shadowColor: colors.primaryDark, // سایه ملایم پاستیلی در iOS
+    elevation: 2,
+    shadowColor: colors.primaryDark,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
     shadowRadius: 8,
-    overflow: 'hidden', // برای گوشه‌های گرد
+    overflow: 'hidden',
   },
   indicator: {
     width: 6,
@@ -138,7 +138,7 @@ const styles = StyleSheet.create({
   },
   actionText: {
     fontFamily: 'Vazir-Bold',
-    color: colors.text, // چون رنگ‌ها پاستیلی هستند، متن تیره خواناتر است
+    color: colors.text,
     fontSize: 14,
   },
 });
