@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, FlatList, StyleSheet, StatusBar } from 'react-native';
 import * as crypto from 'expo-crypto';
-import { db } from '../db/index';
-import { tasks } from '../db/schema';
+import { db } from '../../db';
+import { tasks } from '../../db/schema';
 import { desc, eq } from 'drizzle-orm';
-import TaskItem from '../components/TaskItem';
-import { colors } from '../theme/colors';
+import TaskItem from '../../components/TaskItem';
+import { colors } from '../../theme/colors';
 
 type Task = typeof tasks.$inferSelect;
 

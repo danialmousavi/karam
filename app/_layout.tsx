@@ -43,10 +43,10 @@ export default function RootLayout() {
     );
   }
 
-  return (
+return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <Stack>
-        <Stack.Screen name="index" options={{ title: 'داشبورد', headerShown: false }} />
+      <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="(tabs)" />
       </Stack>
     </GestureHandlerRootView>
   );
