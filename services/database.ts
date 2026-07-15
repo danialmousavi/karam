@@ -1,4 +1,8 @@
+// مسیر فایل: services/database.ts
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import moment from 'moment-jalaali';
+
+moment.loadPersian({ dialect: 'persian-modern', usePersianDigits: false });
 
 export interface Category {
   id: string;
@@ -16,85 +20,117 @@ export interface Task {
   date: string;
 }
 
-const CATEGORIES_KEY = '@pastel_todo_categories';
-const TASKS_KEY = '@pastel_todo_tasks';
+const TASKS_KEY = '@tasks_store';
+const CATEGORIES_KEY = '@categories_store';
 
 export const defaultCategories: Category[] = [
-  { id: '1', name: 'کارهای شخصی', color: '#F3E5F5', textColor: '#6A1B9A', icon: 'user' },
-  { id: '2', name: 'کار و پروژه', color: '#E3F2FD', textColor: '#1565C0', icon: 'briefcase' },
-  { id: '3', name: 'سلامتی و ورزش', color: '#E8F5E9', textColor: '#2E7D32', icon: 'activity' },
-  { id: '4', name: 'خرید', color: '#FFF3E0', textColor: '#E65100', icon: 'shopping-bag' },
+  { id: '1', name: 'کارهای شخصی', color: '#E1BEE7', textColor: '#4A148C', icon: 'user' },
+  { id: '2', name: 'کار و پروژه', color: '#BBDEFB', textColor: '#0D47A1', icon: 'briefcase' },
+  { id: '3', name: 'سلامتی و ورزش', color: '#C8E6C9', textColor: '#1B5E20', icon: 'activity' },
+  { id: '4', name: 'خرید', color: '#FFE0B2', textColor: '#BF360C', icon: 'shopping-bag' },
 ];
 
 export const db = {
-  // مقداردهی اولیه
-  async init(): Promise<void> {
-    const categories = await AsyncStorage.getItem(CATEGORIES_KEY);
-    if (!categories) {
-      await AsyncStorage.setItem(CATEGORIES_KEY, JSON.stringify(defaultCategories));
+  getTasks: async (): Promise<Task[]> => {
+    try {
+      const data = await AsyncStorage.getItem(TASKS_KEY);
+      return data ? JSON.parse(data) : [];
+    } catch (e) {
+      console.error('خطا در دریافت تسک‌ها:', e);
+      return [];
     }
   },
 
-  // ---------------- دسته بندی ها ----------------
-  async getCategories(): Promise<Category[]> {
-    const data = await AsyncStorage.getItem(CATEGORIES_KEY);
-    return data ? JSON.parse(data) : [];
+  addTask: async (task: Omit<Task, 'id' | 'completed'>): Promise<Task> => {
+    try {
+      const tasks = await db.getTasks();
+      const newTask: Task = {
+        ...task,
+        id: Date.now().toString(),
+        completed: false,
+        date: task.date || moment().format('jYYYY/jMM/jDD'),
+      };
+      const updatedTasks = [newTask, ...tasks];
+      await AsyncStorage.setItem(TASKS_KEY, JSON.stringify(updatedTasks));
+      return newTask;
+    } catch (e) {
+      console.error('خطا در ذخیره تسک:', e);
+      throw e;
+    }
   },
 
-  async addCategory(category: Omit<Category, 'id'>): Promise<Category> {
-    const categories = await this.getCategories();
-    const newCategory: Category = {
-      ...category,
-      id: Date.now().toString(),
-    };
-    categories.push(newCategory);
-    await AsyncStorage.setItem(CATEGORIES_KEY, JSON.stringify(categories));
-    return newCategory;
+  toggleTask: async (id: string): Promise<Task[]> => {
+    try {
+      const tasks = await db.getTasks();
+      const updatedTasks = tasks.map(t => t.id === id ? { ...t, completed: !t.completed } : t);
+      await AsyncStorage.setItem(TASKS_KEY, JSON.stringify(updatedTasks));
+      return updatedTasks;
+    } catch (e) {
+      console.error('خطا در ویرایش تسک:', e);
+      return [];
+    }
   },
 
-  async deleteCategory(id: string): Promise<void> {
-    const categories = await this.getCategories();
-    // اضافه کردن تایپ صریح c: Category
-    const filtered = categories.filter((c: Category) => c.id !== id);
-    await AsyncStorage.setItem(CATEGORIES_KEY, JSON.stringify(filtered));
-    
-    // پاک کردن تسک‌های متعلق به این دسته
-    const tasks = await this.getTasks();
-    // اضافه کردن تایپ صریح t: Task
-    const remainingTasks = tasks.filter((t: Task) => t.categoryId !== id);
-    await AsyncStorage.setItem(TASKS_KEY, JSON.stringify(remainingTasks));
+  deleteTask: async (id: string): Promise<Task[]> => {
+    try {
+      const tasks = await db.getTasks();
+      const updatedTasks = tasks.filter(t => t.id !== id);
+      await AsyncStorage.setItem(TASKS_KEY, JSON.stringify(updatedTasks));
+      return updatedTasks;
+    } catch (e) {
+      console.error('خطا در حذف تسک:', e);
+      return [];
+    }
   },
 
-  // ---------------- تسک ها ----------------
-  async getTasks(): Promise<Task[]> {
-    const data = await AsyncStorage.getItem(TASKS_KEY);
-    return data ? JSON.parse(data) : [];
+  // دریافت دسته‌بندی‌ها
+  getCategories: async (): Promise<Category[]> => {
+    try {
+      const data = await AsyncStorage.getItem(CATEGORIES_KEY);
+      if (!data) {
+        await AsyncStorage.setItem(CATEGORIES_KEY, JSON.stringify(defaultCategories));
+        return defaultCategories;
+      }
+      return JSON.parse(data);
+    } catch (e) {
+      console.error('خطا در دریافت دسته‌بندی‌ها:', e);
+      return defaultCategories;
+    }
   },
 
-  async addTask(task: Omit<Task, 'id' | 'completed'>): Promise<Task> {
-    const tasks = await this.getTasks();
-    const newTask: Task = {
-      ...task,
-      id: Date.now().toString(),
-      completed: false,
-    };
-    tasks.push(newTask);
-    await AsyncStorage.setItem(TASKS_KEY, JSON.stringify(tasks));
-    return newTask;
+  // ایجاد دسته‌بندی جدید (اضافه شد 🌟)
+  addCategory: async (category: Omit<Category, 'id'>): Promise<Category> => {
+    try {
+      const categories = await db.getCategories();
+      const newCategory: Category = {
+        ...category,
+        id: Date.now().toString(),
+      };
+      const updatedCategories = [...categories, newCategory];
+      await AsyncStorage.setItem(CATEGORIES_KEY, JSON.stringify(updatedCategories));
+      return newCategory;
+    } catch (e) {
+      console.error('خطا در ذخیره دسته‌بندی جدید:', e);
+      throw e;
+    }
   },
 
-  async toggleTask(id: string): Promise<Task[]> {
-    const tasks = await this.getTasks();
-    // اضافه کردن تایپ صریح t: Task
-    const updated = tasks.map((t: Task) => t.id === id ? { ...t, completed: !t.completed } : t);
-    await AsyncStorage.setItem(TASKS_KEY, JSON.stringify(updated));
-    return updated;
-  },
+  // حذف دسته‌بندی و تسک‌های متصل به آن (اضافه شد 🌟)
+  deleteCategory: async (id: string): Promise<Category[]> => {
+    try {
+      const categories = await db.getCategories();
+      const updatedCategories = categories.filter(c => c.id !== id);
+      await AsyncStorage.setItem(CATEGORIES_KEY, JSON.stringify(updatedCategories));
 
-  async deleteTask(id: string): Promise<void> {
-    const tasks = await this.getTasks();
-    // اضافه کردن تایپ صریح t: Task
-    const filtered = tasks.filter((t: Task) => t.id !== id);
-    await AsyncStorage.setItem(TASKS_KEY, JSON.stringify(filtered));
+      // حذف خودکار تسک‌های این دسته‌بندی برای تمیز ماندن دیتابیس
+      const tasks = await db.getTasks();
+      const updatedTasks = tasks.filter(t => t.categoryId !== id);
+      await AsyncStorage.setItem(TASKS_KEY, JSON.stringify(updatedTasks));
+
+      return updatedCategories;
+    } catch (e) {
+      console.error('خطا در حذف دسته‌بندی:', e);
+      return [];
+    }
   }
 };

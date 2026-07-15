@@ -1,3 +1,4 @@
+// مسیر فایل: app/(tabs)/categories.tsx
 import React, { useState, useEffect } from 'react';
 import { 
   StyleSheet, 
@@ -54,7 +55,7 @@ export default function CategoriesScreen() {
   });
 
   const loadData = async () => {
-    await db.init();
+    // حذف فراخوانی db.init برای جلوگیری از کرش و خطای تایپ‌اسکریپت 🌟
     const loadedCategories = await db.getCategories();
     const loadedTasks = await db.getTasks();
     setCategories(loadedCategories);
@@ -157,7 +158,7 @@ export default function CategoriesScreen() {
       />
 
       <TouchableOpacity style={styles.fab} onPress={() => setModalVisible(true)} activeOpacity={0.8}>
-        <Feather name="plus" size={24} color="#FFF" />
+        <Feather name="plus" size={24} color={colors.surface} />
       </TouchableOpacity>
 
       <Modal visible={modalVisible} animationType="slide" transparent={true} onRequestClose={() => setModalVisible(false)}>
@@ -178,7 +179,7 @@ export default function CategoriesScreen() {
               horizontal 
               showsHorizontalScrollIndicator={false} 
               style={styles.horizontalScroll}
-              contentContainerStyle={styles.horizontalScrollContent} // 👈 حل مشکل اسکرول
+              contentContainerStyle={styles.horizontalScrollContent}
             >
               {AVAILABLE_ICONS.map((iconName) => (
                 <TouchableOpacity
@@ -235,7 +236,7 @@ export default function CategoriesScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#FAFAFA', paddingTop: Platform.OS === 'ios' ? 60 : 40 },
+  container: { flex: 1, backgroundColor: colors.background, paddingTop: Platform.OS === 'ios' ? 60 : 40 },
   header: { paddingHorizontal: 24, marginBottom: 20 },
   headerTitle: { fontFamily: 'Vazir-Bold', fontSize: 24, color: colors.primaryDark, textAlign: 'right' },
   headerSubtitle: { fontFamily: 'Vazir-Bold', fontSize: 13, color: colors.textMuted, textAlign: 'right', marginTop: 4 },
@@ -249,19 +250,19 @@ const styles = StyleSheet.create({
   cardCount: { fontFamily: 'Vazir-Bold', fontSize: 11, textAlign: 'right', opacity: 0.8 },
   fab: { position: 'absolute', bottom: Platform.OS === 'ios' ? 115 : 105, left: 28, width: 56, height: 56, borderRadius: 28, backgroundColor: colors.primaryDark, justifyContent: 'center', alignItems: 'center', elevation: 5, shadowColor: colors.primaryDark, shadowOpacity: 0.3, shadowRadius: 8, shadowOffset: { width: 0, height: 4 } },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' },
-  modalContent: { backgroundColor: '#FFF', borderTopLeftRadius: 30, borderTopRightRadius: 30, padding: 24, minHeight: 450 },
+  modalContent: { backgroundColor: colors.surface, borderTopLeftRadius: 30, borderTopRightRadius: 30, padding: 24, minHeight: 450 },
   modalTitle: { fontFamily: 'Vazir-Bold', fontSize: 18, color: colors.primaryDark, textAlign: 'right', marginBottom: 20 },
-  input: { backgroundColor: '#F5F5F5', borderRadius: 14, padding: 14, fontFamily: 'Vazir-Bold', fontSize: 14, textAlign: 'right', color: colors.primaryDark, marginBottom: 16 },
+  input: { backgroundColor: colors.background, borderRadius: 14, padding: 14, fontFamily: 'Vazir-Bold', fontSize: 14, textAlign: 'right', color: colors.text, marginBottom: 16, borderWidth: 1, borderColor: colors.border },
   sectionLabel: { fontFamily: 'Vazir-Bold', fontSize: 13, color: colors.primaryDark, textAlign: 'right', marginBottom: 10 },
   horizontalScroll: { marginBottom: 20 },
   horizontalScrollContent: { flexDirection: 'row-reverse', alignItems: 'center', paddingHorizontal: 4 },
-  iconSelect: { width: 44, height: 44, borderRadius: 12, backgroundColor: '#F5F5F5', justifyContent: 'center', alignItems: 'center', marginLeft: 10 },
+  iconSelect: { width: 44, height: 44, borderRadius: 12, backgroundColor: colors.background, justifyContent: 'center', alignItems: 'center', marginLeft: 10, borderWidth: 1, borderColor: colors.border },
   colorPalette: { flexDirection: 'row-reverse', justifyContent: 'space-between', marginBottom: 30 },
   colorCircle: { width: 36, height: 36, borderRadius: 18 },
   modalButtons: { flexDirection: 'row', justifyContent: 'space-between' },
   btn: { flex: 1, height: 48, borderRadius: 14, justifyContent: 'center', alignItems: 'center' },
-  btnCancel: { backgroundColor: '#F5F5F5', marginRight: 10 },
+  btnCancel: { backgroundColor: colors.background, marginRight: 10, borderWidth: 1, borderColor: colors.border },
   btnCancelText: { fontFamily: 'Vazir-Bold', fontSize: 14, color: colors.textMuted },
   btnSave: { backgroundColor: colors.primaryDark },
-  btnSaveText: { fontFamily: 'Vazir-Bold', fontSize: 14, color: '#FFF' },
+  btnSaveText: { fontFamily: 'Vazir-Bold', fontSize: 14, color: colors.surface },
 });
