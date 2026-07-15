@@ -133,7 +133,7 @@ export default function HomeScreen() {
                   </View>
                 </View>
                 <TouchableOpacity onPress={() => handleDeleteRequest(item.id)} style={styles.deleteBtn}>
-                  <Feather name="trash-2" size={18} color="#FFCDD2" />
+                  <Feather name="trash-2" size={20} color="#f92e42" />
                 </TouchableOpacity>
               </View>
             );
