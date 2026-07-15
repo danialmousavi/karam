@@ -44,11 +44,11 @@ export default function TabLayout() {
         }
       }}
     >
-      <Tabs.Screen
-        name="index"
+     <Tabs.Screen
+        name="settings"
         options={{
-          title: 'خانه',
-          tabBarIcon: ({ color }) => <Feather name="home" size={22} color={color} />,
+          title: 'تنظیمات',
+          tabBarIcon: ({ color }) => <Feather name="settings" size={22} color={color} />,
         }}
       />
 
@@ -68,11 +68,12 @@ export default function TabLayout() {
         }}
       />
 
-      <Tabs.Screen
-        name="settings"
+ 
+            <Tabs.Screen
+        name="index"
         options={{
-          title: 'تنظیمات',
-          tabBarIcon: ({ color }) => <Feather name="settings" size={22} color={color} />,
+          title: 'خانه',
+          tabBarIcon: ({ color }) => <Feather name="home" size={22} color={color} />,
         }}
       />
     </Tabs>
