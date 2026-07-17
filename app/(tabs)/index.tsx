@@ -148,7 +148,7 @@ export default function HomeScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>تقویم من 📅</Text>
+        <Text style={styles.headerTitle}>کارام</Text>
         <Text style={styles.headerSubtitle}>چه خبر از امروز؟</Text>
       </View>
 
