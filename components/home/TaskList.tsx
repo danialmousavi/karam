@@ -1,4 +1,3 @@
-// components/home/TaskList.tsx
 import React from 'react';
 import { FlatList, StyleSheet, View } from 'react-native';
 import { colors } from '../../theme/colors';

@@ -1,4 +1,3 @@
-// components/home/CalendarStrip.tsx
 import React, { useMemo } from 'react';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet } from 'react-native';
 import moment from 'moment-jalaali';

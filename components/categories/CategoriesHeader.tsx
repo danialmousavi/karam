@@ -1,18 +1,18 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, Platform } from 'react-native';
 import { colors } from '../../theme/colors';
 
-export default function HomeHeader() {
+export default function CategoriesHeader() {
   return (
     <View style={styles.header}>
-      <Text style={styles.headerTitle}>کارام</Text>
-      <Text style={styles.headerSubtitle}>چه خبر از امروز؟</Text>
+      <Text style={styles.headerTitle}>دسته‌بندی‌ها 📂</Text>
+      <Text style={styles.headerSubtitle}>برنامه‌هات رو تفکیک و منظم کن</Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  header: { paddingHorizontal: 24, marginBottom: 16 },
+  header: { paddingHorizontal: 24, marginBottom: 20 },
   headerTitle: { 
     fontFamily: 'Vazir-Bold', 
     fontSize: 24, 

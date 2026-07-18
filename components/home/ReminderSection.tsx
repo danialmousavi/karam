@@ -1,4 +1,3 @@
-// components/home/ReminderSection.tsx
 import React from 'react';
 import { View, Text, Switch, StyleSheet } from 'react-native';
 import { colors } from '../../theme/colors';

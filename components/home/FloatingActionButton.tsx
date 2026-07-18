@@ -1,4 +1,3 @@
-// components/home/FloatingActionButton.tsx
 import React from 'react';
 import { TouchableOpacity, StyleSheet, Platform } from 'react-native';
 import { Feather } from '@expo/vector-icons';
