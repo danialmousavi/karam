@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { 
   StyleSheet, Text, View, FlatList, TouchableOpacity, 
-  Modal, TextInput, Platform, KeyboardAvoidingView 
+  Modal, TextInput, Platform, KeyboardAvoidingView, Switch 
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import moment from 'moment-jalaali';
@@ -9,8 +9,8 @@ import { colors } from '../../theme/colors';
 import { db, Category, Task } from '../../services/database';
 import { useIsFocused } from '@react-navigation/native';
 import CustomAlert from '../../components/CustomAlert';
-
-// تنظیم زبان فارسی برای نام روزها و ماه‌ها
+import { scheduleTaskNotification, requestNotificationPermissions } from '../../services/notifications';
+import TimePicker from '../../components/TimePicker';
 moment.loadPersian({ dialect: 'persian-modern', usePersianDigits: false });
 
 export default function HomeScreen() {
@@ -19,20 +19,22 @@ export default function HomeScreen() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [modalVisible, setModalVisible] = useState(false);
   
-  // استیت‌های تقویم 📅
   const todayString = moment().format('jYYYY/jMM/jDD');
   const [selectedDate, setSelectedDate] = useState<string>(todayString);
   
-  // استیت‌های ساخت تسک جدید ✏️
   const [newTaskTitle, setNewTaskTitle] = useState('');
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>('');
   const [selectedNewTaskDates, setSelectedNewTaskDates] = useState<string[]>([todayString]);
+
+  // 🌟 استیت‌های جدید برای ساعت کاستوم
+  const [isReminderEnabled, setIsReminderEnabled] = useState(false);
+  const [selectedHour, setSelectedHour] = useState(moment().hour());
+  const [selectedMinute, setSelectedMinute] = useState(moment().minute());
 
   const [alertConfig, setAlertConfig] = useState({
     visible: false, type: 'danger' as 'success' | 'danger' | 'warning', title: '', message: '', showCancel: false, onConfirm: () => {},
   });
 
-  // تولید تقویم برای نوار بالا 🗓️
   const calendarDays = useMemo(() => {
     const days = [];
     for (let i = -7; i <= 30; i++) {
@@ -47,27 +49,25 @@ export default function HomeScreen() {
     return days;
   }, []);
 
-  // روزهای قابل انتخاب در مودال (از تاریخ انتخاب شده تا ۳۰ روز بعد)
   const modalDays = useMemo(() => {
     return calendarDays
       .filter(d => moment(d.fullDate, 'jYYYY/jMM/jDD').isSameOrAfter(moment(selectedDate, 'jYYYY/jMM/jDD')))
-      .slice(0, 31); // حداکثر ۳۰ روز بعد
+      .slice(0, 31);
   }, [calendarDays, selectedDate]);
 
   const loadData = async () => {
     const loadedTasks = await db.getTasks();
     const loadedCategories = await db.getCategories();
-    
     setTasks(loadedTasks);
     setCategories(loadedCategories);
-    
-    if (loadedCategories.length > 0 && !selectedCategoryId) {
-      setSelectedCategoryId(loadedCategories[0].id);
-    }
+    if (loadedCategories.length > 0 && !selectedCategoryId) setSelectedCategoryId(loadedCategories[0].id);
   };
 
   useEffect(() => {
-    if (isFocused) loadData();
+    if (isFocused) {
+      loadData();
+      requestNotificationPermissions();
+    }
   }, [isFocused]);
 
   const currentDayTasks = tasks.filter(t => t.date === selectedDate).reverse();
@@ -86,14 +86,28 @@ export default function HomeScreen() {
       return;
     }
 
+    let notifId: string | null = null;
+    let timeString: string | null = null;
+
+    if (isReminderEnabled) {
+      // فرمت کردن ساعت به صورت 09:05
+      timeString = `${selectedHour.toString().padStart(2, '0')}:${selectedMinute.toString().padStart(2, '0')}`;
+      notifId = await scheduleTaskNotification(newTaskTitle.trim(), selectedNewTaskDates[0], timeString) || null;
+    }
+
     await db.addTask({
       title: newTaskTitle.trim(),
       categoryId: selectedCategoryId,
       dates: selectedNewTaskDates,
+      time: timeString,
+      notifId: notifId,
     });
 
     setNewTaskTitle('');
     setSelectedNewTaskDates([selectedDate]);
+    setIsReminderEnabled(false);
+    setSelectedHour(moment().hour());
+    setSelectedMinute(moment().minute());
     setModalVisible(false);
     loadData();
   };
@@ -106,11 +120,9 @@ export default function HomeScreen() {
     }
   };
 
-  // انتخاب تا آخر هفته (جمعه)
   const selectUntilEndOfWeek = () => {
     const daysToSelect: string[] = [];
     let started = false;
-
     for (const day of calendarDays) {
       if (day.fullDate === selectedDate) started = true;
       if (started) {
@@ -152,39 +164,23 @@ export default function HomeScreen() {
         <Text style={styles.headerSubtitle}>چه خبر از امروز؟</Text>
       </View>
 
-      {/* نوار تقویم با فلت‌لیست معکوس برای حل مشکل اسکرول RTL */}
       <View style={styles.calendarStripContainer}>
         <FlatList
-          horizontal
-          inverted // شروع از سمت راست
-          showsHorizontalScrollIndicator={false}
-          data={calendarDays}
-          keyExtractor={(item) => item.fullDate}
-          contentContainerStyle={styles.calendarList}
-          // عدد 7 نمایانگر "امروز" در آرایه ماست، پس لیست دقیقا روی امروز باز می‌شود
-          initialScrollIndex={7}
+          horizontal inverted showsHorizontalScrollIndicator={false}
+          data={calendarDays} keyExtractor={(item) => item.fullDate}
+          contentContainerStyle={styles.calendarList} initialScrollIndex={7}
           getItemLayout={(data, index) => ({ length: 68, offset: 68 * index, index })}
           renderItem={({ item: day }) => {
             const isSelected = selectedDate === day.fullDate;
             const isToday = day.fullDate === todayString;
             return (
               <TouchableOpacity
-                style={[
-                  styles.dateFlag,
-                  isSelected && styles.dateFlagSelected,
-                  isToday && !isSelected && styles.dateFlagToday
-                ]}
+                style={[styles.dateFlag, isSelected && styles.dateFlagSelected, isToday && !isSelected && styles.dateFlagToday]}
                 onPress={() => setSelectedDate(day.fullDate)}
               >
-                <Text style={[styles.dateFlagName, isSelected && styles.dateFlagTextSelected]}>
-                  {day.dayName}
-                </Text>
-                <Text style={[styles.dateFlagNum, isSelected && styles.dateFlagTextSelected]}>
-                  {day.dayNum}
-                </Text>
-                <Text style={[styles.dateFlagMonth, isSelected && styles.dateFlagTextSelected]}>
-                  {day.monthName}
-                </Text>
+                <Text style={[styles.dateFlagName, isSelected && styles.dateFlagTextSelected]}>{day.dayName}</Text>
+                <Text style={[styles.dateFlagNum, isSelected && styles.dateFlagTextSelected]}>{day.dayNum}</Text>
+                <Text style={[styles.dateFlagMonth, isSelected && styles.dateFlagTextSelected]}>{day.monthName}</Text>
                 {tasks.some(t => t.date === day.fullDate && !t.completed) && (
                   <View style={[styles.taskIndicator, isSelected && {backgroundColor: colors.surface}]} />
                 )}
@@ -194,16 +190,13 @@ export default function HomeScreen() {
         />
       </View>
 
-      {/* لیست تسک‌ها 📝 */}
       {currentDayTasks.length === 0 ? (
         <View style={styles.emptyContainer}>
           <Text style={styles.emptyText}>هیچ کاری برای این روز ثبت نکردی!</Text>
         </View>
       ) : (
         <FlatList
-          data={currentDayTasks}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.listContainer}
+          data={currentDayTasks} keyExtractor={(item) => item.id} contentContainerStyle={styles.listContainer}
           renderItem={({ item }) => {
             const cat = getCategoryDetails(item.categoryId);
             return (
@@ -219,6 +212,12 @@ export default function HomeScreen() {
                         <Feather name={cat.icon as any} size={10} color={cat.textColor} />
                         <Text style={[styles.categoryBadgeText, { color: cat.textColor }]}>{cat.name}</Text>
                       </View>
+                      {item.time && (
+                        <View style={[styles.categoryBadge, { backgroundColor: colors.background, marginLeft: 6, borderWidth: 1, borderColor: colors.border }]}>
+                          <Feather name="bell" size={10} color={colors.primaryDark} />
+                          <Text style={[styles.categoryBadgeText, { color: colors.primaryDark }]}>{item.time}</Text>
+                        </View>
+                      )}
                     </View>
                   </View>
                 </View>
@@ -231,19 +230,16 @@ export default function HomeScreen() {
         />
       )}
 
-      {/* دکمه افزودن (FAB) */}
       <TouchableOpacity 
         style={styles.fab} 
         onPress={() => {
           setSelectedNewTaskDates([selectedDate]); 
           setModalVisible(true);
         }} 
-        activeOpacity={0.8}
       >
         <Feather name="plus" size={24} color={colors.surface} />
       </TouchableOpacity>
 
-      {/* مودال ساخت تسک 🛠️ */}
       <Modal visible={modalVisible} animationType="slide" transparent={true} onRequestClose={() => setModalVisible(false)}>
         <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={styles.modalOverlay}>
           <View style={styles.modalContent}>
@@ -251,31 +247,21 @@ export default function HomeScreen() {
             <Text style={styles.modalTitle}>ثبت کار جدید ✨</Text>
 
             <TextInput
-              style={styles.input}
-              placeholder="می‌خوای چیکار کنی؟..."
-              placeholderTextColor={colors.textMuted}
-              value={newTaskTitle}
-              onChangeText={setNewTaskTitle}
+              style={styles.input} placeholder="می‌خوای چیکار کنی؟..." placeholderTextColor={colors.textMuted}
+              value={newTaskTitle} onChangeText={setNewTaskTitle}
             />
 
             <Text style={styles.sectionLabel}>دسته‌بندی رو انتخاب کن:</Text>
             <View style={styles.horizontalListContainer}>
               <FlatList
-                horizontal
-                inverted
-                showsHorizontalScrollIndicator={false}
-                data={categories}
-                keyExtractor={(item) => item.id}
+                horizontal inverted showsHorizontalScrollIndicator={false}
+                data={categories} keyExtractor={(item) => item.id}
                 contentContainerStyle={styles.horizontalScrollContent}
                 renderItem={({ item: cat }) => {
                   const isSelected = selectedCategoryId === cat.id;
                   return (
                     <TouchableOpacity
-                      style={[
-                        styles.categoryChip,
-                        { backgroundColor: isSelected ? cat.color : colors.background },
-                        isSelected && { borderColor: cat.textColor, borderWidth: 1 }
-                      ]}
+                      style={[styles.categoryChip, { backgroundColor: isSelected ? cat.color : colors.background }, isSelected && { borderColor: cat.textColor, borderWidth: 1 }]}
                       onPress={() => setSelectedCategoryId(cat.id)}
                     >
                       <Feather name={cat.icon as any} size={16} color={isSelected ? cat.textColor : colors.textMuted} />
@@ -295,19 +281,13 @@ export default function HomeScreen() {
             
             <View style={styles.horizontalListContainer}>
               <FlatList
-                horizontal
-                inverted // همیشه از روی روز انتخابی (سمت راست) شروع می‌شود
-                showsHorizontalScrollIndicator={false}
-                data={modalDays}
-                keyExtractor={(item) => item.fullDate}
+                horizontal inverted showsHorizontalScrollIndicator={false}
+                data={modalDays} keyExtractor={(item) => item.fullDate}
                 contentContainerStyle={styles.horizontalScrollContent}
                 renderItem={({ item: day }) => {
                   const isSelected = selectedNewTaskDates.includes(day.fullDate);
                   return (
-                    <TouchableOpacity
-                      style={[styles.dateChip, isSelected && styles.dateChipSelected]}
-                      onPress={() => toggleNewTaskDate(day.fullDate)}
-                    >
+                    <TouchableOpacity style={[styles.dateChip, isSelected && styles.dateChipSelected]} onPress={() => toggleNewTaskDate(day.fullDate)}>
                       <Text style={[styles.dateChipDayName, isSelected && styles.dateChipTextSelected]}>{day.dayName}</Text>
                       <Text style={[styles.dateChipDate, isSelected && styles.dateChipTextSelected]}>{day.dayNum}</Text>
                       <Text style={[styles.dateChipMonth, isSelected && styles.dateChipTextSelected]}>{day.monthName}</Text>
@@ -315,6 +295,28 @@ export default function HomeScreen() {
                   );
                 }}
               />
+            </View>
+
+            {/* 🌟 بخش جدید: انتخابگر زمان کاستوم (بسیار زیباتر) */}
+            <View style={styles.reminderContainer}>
+              <View style={styles.reminderHeader}>
+                <Switch
+                  value={isReminderEnabled}
+                  onValueChange={setIsReminderEnabled}
+                  trackColor={{ false: colors.border, true: colors.primaryDark }}
+                  thumbColor={colors.surface}
+                />
+                <Text style={styles.sectionLabel}>یادآوری با آلارم 🔔</Text>
+              </View>
+
+              {isReminderEnabled && (
+                <TimePicker
+                  selectedHour={selectedHour}
+                  selectedMinute={selectedMinute}
+                  onHourChange={setSelectedHour}
+                  onMinuteChange={setSelectedMinute}
+                />
+              )}
             </View>
 
             <View style={styles.modalButtons}>
@@ -342,13 +344,11 @@ const styles = StyleSheet.create({
   
   calendarStripContainer: { height: 105, marginBottom: 10 },
   calendarList: { paddingHorizontal: 16, alignItems: 'center' },
-  // ارتفاع و عرض تنظیم شد تا فونت‌های جدید جا شوند
-  dateFlag: { width: 56, height: 90, backgroundColor: colors.surface, borderRadius: 20, justifyContent: 'center', alignItems: 'center', marginHorizontal: 6, borderWidth: 1, borderColor: colors.border, elevation: 1, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 3, shadowOffset: { width: 0, height: 2 } },
+  dateFlag: { width: 56, height: 90, backgroundColor: colors.surface, borderRadius: 20, justifyContent: 'center', alignItems: 'center', marginHorizontal: 6, borderWidth: 1, borderColor: colors.border, elevation: 1 },
   dateFlagSelected: { backgroundColor: colors.primaryDark, borderColor: colors.primaryDark, transform: [{ scale: 1.05 }] },
   dateFlagToday: { borderColor: colors.primaryDark, borderWidth: 2 },
   dateFlagName: { fontFamily: 'Vazir-Bold', fontSize: 11, color: colors.textMuted, marginBottom: 2 },
   dateFlagNum: { fontFamily: 'Vazir-Bold', fontSize: 18, color: colors.text },
-  // فونت ماه بزرگتر شد 👇
   dateFlagMonth: { fontFamily: 'Vazir-Medium', fontSize: 12, color: colors.textMuted, marginTop: 2 },
   dateFlagTextSelected: { color: colors.surface },
   taskIndicator: { position: 'absolute', bottom: 6, width: 4, height: 4, borderRadius: 2, backgroundColor: colors.primaryDark },
@@ -356,7 +356,7 @@ const styles = StyleSheet.create({
   emptyContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', opacity: 0.5 },
   emptyText: { fontFamily: 'Vazir-Bold', fontSize: 16, color: colors.textMuted },
   listContainer: { paddingHorizontal: 16, paddingBottom: 120, paddingTop: 10 },
-  taskCard: { flexDirection: 'row-reverse', justifyContent: 'space-between', alignItems: 'center', backgroundColor: colors.surface, padding: 16, borderRadius: 20, marginBottom: 12, borderWidth: 1, borderColor: colors.border, elevation: 1, shadowColor: '#000', shadowOpacity: 0.02, shadowRadius: 3, shadowOffset: { width: 0, height: 1 } },
+  taskCard: { flexDirection: 'row-reverse', justifyContent: 'space-between', alignItems: 'center', backgroundColor: colors.surface, padding: 16, borderRadius: 20, marginBottom: 12, borderWidth: 1, borderColor: colors.border, elevation: 1 },
   taskCardCompleted: { backgroundColor: colors.background, opacity: 0.7 },
   taskLeft: { flexDirection: 'row-reverse', alignItems: 'center', flex: 1 },
   checkbox: { width: 26, height: 26, borderRadius: 8, borderWidth: 2, borderColor: colors.border, justifyContent: 'center', alignItems: 'center', marginLeft: 12 },
@@ -368,7 +368,7 @@ const styles = StyleSheet.create({
   categoryBadge: { flexDirection: 'row-reverse', alignItems: 'center', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8, alignSelf: 'flex-start' },
   categoryBadgeText: { fontFamily: 'Vazir-Bold', fontSize: 10, marginRight: 4 },
   deleteBtn: { padding: 8 },
-  fab: { position: 'absolute', bottom: Platform.OS === 'ios' ? 115 : 105, left: 28, width: 56, height: 56, borderRadius: 28, backgroundColor: colors.primaryDark, justifyContent: 'center', alignItems: 'center', elevation: 5, shadowColor: colors.primaryDark, shadowOpacity: 0.3, shadowRadius: 8, shadowOffset: { width: 0, height: 4 } },
+  fab: { position: 'absolute', bottom: Platform.OS === 'ios' ? 115 : 105, left: 28, width: 56, height: 56, borderRadius: 28, backgroundColor: colors.primaryDark, justifyContent: 'center', alignItems: 'center', elevation: 5 },
   
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' },
   modalContent: { backgroundColor: colors.surface, borderTopLeftRadius: 30, borderTopRightRadius: 30, padding: 24, minHeight: 480 },
@@ -378,14 +378,12 @@ const styles = StyleSheet.create({
   
   dateSelectionHeader: { flexDirection: 'row-reverse', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
   selectAllText: { fontFamily: 'Vazir-Bold', fontSize: 12, color: colors.primaryDark },
-  
   horizontalListContainer: { marginBottom: 24 },
   horizontalScrollContent: { alignItems: 'center', paddingHorizontal: 4 },
   
   categoryChip: { flexDirection: 'row-reverse', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 10, borderRadius: 14, marginHorizontal: 5, borderWidth: 1, borderColor: colors.border },
   categoryChipText: { fontFamily: 'Vazir-Bold', fontSize: 13, marginRight: 6 },
 
-  // استایل کارت‌های روز داخل مودال - فونت ماه بزرگتر شد 👇
   dateChip: { width: 52, height: 82, borderRadius: 14, backgroundColor: colors.background, justifyContent: 'center', alignItems: 'center', marginHorizontal: 5, borderWidth: 1, borderColor: colors.border },
   dateChipSelected: { backgroundColor: colors.primaryDark, borderColor: colors.primaryDark },
   dateChipDayName: { fontFamily: 'Vazir-Bold', fontSize: 10, color: colors.textMuted, marginBottom: 2 },
@@ -393,7 +391,19 @@ const styles = StyleSheet.create({
   dateChipMonth: { fontFamily: 'Vazir-Medium', fontSize: 11, color: colors.textMuted, marginTop: 2 },
   dateChipTextSelected: { color: colors.surface },
 
-  sectionLabel: { fontFamily: 'Vazir-Bold', fontSize: 13, color: colors.text, textAlign: 'right', marginBottom: 12 },
+  sectionLabel: { fontFamily: 'Vazir-Bold', fontSize: 13, color: colors.text, textAlign: 'right', marginBottom: 0 },
+  
+  // 🌟 استایل‌های ساعت کاستوم جدید
+  reminderContainer: { marginBottom: 24, backgroundColor: colors.background, padding: 16, borderRadius: 16, borderWidth: 1, borderColor: colors.border },
+  reminderHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  
+  customTimePicker: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginTop: 16 },
+  timeColumn: { alignItems: 'center', marginHorizontal: 12 },
+  timeArrow: { padding: 8, backgroundColor: colors.surface, borderRadius: 12, borderWidth: 1, borderColor: colors.border },
+  timeBox: { backgroundColor: colors.surface, width: 64, height: 56, borderRadius: 16, justifyContent: 'center', alignItems: 'center', marginVertical: 8, borderWidth: 1, borderColor: colors.border, elevation: 1 },
+  timeText: { fontFamily: 'Vazir-Bold', fontSize: 24, color: colors.primaryDark },
+  timeColon: { fontFamily: 'Vazir-Bold', fontSize: 28, color: colors.textMuted, marginTop: 10 },
+
   modalButtons: { flexDirection: 'row', justifyContent: 'space-between' },
   btn: { flex: 1, height: 52, borderRadius: 16, justifyContent: 'center', alignItems: 'center' },
   btnCancel: { backgroundColor: colors.background, marginRight: 10, borderWidth: 1, borderColor: colors.border },

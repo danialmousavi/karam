@@ -1,6 +1,7 @@
 // مسیر فایل: services/database.ts
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import moment from 'moment-jalaali';
+import { cancelNotification } from './notifications'; // 🌟 اضافه شد برای لغو نوتیفیکیشن‌ها
 
 moment.loadPersian({ dialect: 'persian-modern', usePersianDigits: false });
 
@@ -15,9 +16,11 @@ export interface Category {
 export interface Task {
   id: string;
   title: string;
-  completed: boolean;
   categoryId: string;
-  date: string;
+  date: string;       
+  time?: string | null;      // آپدیت شد برای پذیرش null
+  notifId?: string | null;   // آپدیت شد برای پذیرش null
+  completed: boolean;
 }
 
 const TASKS_KEY = '@tasks_store';
@@ -41,7 +44,7 @@ export const db = {
     }
   },
 
-addTask: async (task: Omit<Task, 'id' | 'completed' | 'date'> & { dates: string[] }): Promise<Task[]> => {
+  addTask: async (task: Omit<Task, 'id' | 'completed' | 'date'> & { dates: string[] }): Promise<Task[]> => {
     try {
       const tasks = await db.getTasks();
       
@@ -51,7 +54,9 @@ addTask: async (task: Omit<Task, 'id' | 'completed' | 'date'> & { dates: string[
         categoryId: task.categoryId,
         completed: false,
         date: dateString,
-        id: Date.now().toString() + index.toString(), // ایجاد آیدی یکتا برای هر تسک
+        time: task.time || null,       
+        notifId: task.notifId || null, 
+        id: Date.now().toString() + index.toString(), 
       }));
 
       const updatedTasks = [...newTasks, ...tasks];
@@ -66,7 +71,16 @@ addTask: async (task: Omit<Task, 'id' | 'completed' | 'date'> & { dates: string[
   toggleTask: async (id: string): Promise<Task[]> => {
     try {
       const tasks = await db.getTasks();
-      const updatedTasks = tasks.map(t => t.id === id ? { ...t, completed: !t.completed } : t);
+      const updatedTasks = tasks.map(t => {
+        if (t.id === id) {
+          // 🌟 اگر تسک در حال تیک خوردن است و نوتیفیکیشن دارد، نوتیفیکیشن را لغو می‌کنیم
+          if (!t.completed && t.notifId) {
+            cancelNotification(t.notifId);
+          }
+          return { ...t, completed: !t.completed };
+        }
+        return t;
+      });
       await AsyncStorage.setItem(TASKS_KEY, JSON.stringify(updatedTasks));
       return updatedTasks;
     } catch (e) {
@@ -78,6 +92,13 @@ addTask: async (task: Omit<Task, 'id' | 'completed' | 'date'> & { dates: string[
   deleteTask: async (id: string): Promise<Task[]> => {
     try {
       const tasks = await db.getTasks();
+      
+      // 🌟 پیدا کردن تسک برای لغو نوتیفیکیشنِ آن (قبل از حذف)
+      const taskToDelete = tasks.find(t => t.id === id);
+      if (taskToDelete && taskToDelete.notifId) {
+        cancelNotification(taskToDelete.notifId);
+      }
+
       const updatedTasks = tasks.filter(t => t.id !== id);
       await AsyncStorage.setItem(TASKS_KEY, JSON.stringify(updatedTasks));
       return updatedTasks;
@@ -102,7 +123,7 @@ addTask: async (task: Omit<Task, 'id' | 'completed' | 'date'> & { dates: string[
     }
   },
 
-  // ایجاد دسته‌بندی جدید (اضافه شد 🌟)
+  // ایجاد دسته‌بندی جدید
   addCategory: async (category: Omit<Category, 'id'>): Promise<Category> => {
     try {
       const categories = await db.getCategories();
@@ -119,15 +140,24 @@ addTask: async (task: Omit<Task, 'id' | 'completed' | 'date'> & { dates: string[
     }
   },
 
-  // حذف دسته‌بندی و تسک‌های متصل به آن (اضافه شد 🌟)
+  // حذف دسته‌بندی و تسک‌های متصل به آن
   deleteCategory: async (id: string): Promise<Category[]> => {
     try {
       const categories = await db.getCategories();
       const updatedCategories = categories.filter(c => c.id !== id);
       await AsyncStorage.setItem(CATEGORIES_KEY, JSON.stringify(updatedCategories));
 
-      // حذف خودکار تسک‌های این دسته‌بندی برای تمیز ماندن دیتابیس
       const tasks = await db.getTasks();
+      
+      // 🌟 پیدا کردن تسک‌هایی که قرار است حذف شوند و لغو نوتیفیکیشن آن‌ها
+      const tasksToDelete = tasks.filter(t => t.categoryId === id);
+      tasksToDelete.forEach(t => {
+        if (t.notifId) {
+          cancelNotification(t.notifId);
+        }
+      });
+
+      // حذف خودکار تسک‌های این دسته‌بندی
       const updatedTasks = tasks.filter(t => t.categoryId !== id);
       await AsyncStorage.setItem(TASKS_KEY, JSON.stringify(updatedTasks));
 
@@ -137,4 +167,4 @@ addTask: async (task: Omit<Task, 'id' | 'completed' | 'date'> & { dates: string[
       return [];
     }
   }
-};
+};  

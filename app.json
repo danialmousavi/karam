@@ -30,7 +30,8 @@
     "plugins": [
       "expo-sqlite",
       "expo-router",
-      "expo-font"
+      "expo-font",
+      "@react-native-community/datetimepicker"
     ]
   }
 }
