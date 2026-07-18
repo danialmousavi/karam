@@ -3,20 +3,18 @@ import { View, Text, ActivityIndicator } from 'react-native';
 import { Stack } from 'expo-router';
 import { useMigrations } from 'drizzle-orm/expo-sqlite/migrator';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { useFonts } from 'expo-font'; // اضافه شد
-import * as SplashScreen from 'expo-splash-screen'; // اضافه شد
+import { useFonts } from 'expo-font';
+import * as SplashScreen from 'expo-splash-screen';
 import { db } from '../db/index';
 import migrations from '../drizzle/migrations';
 
-// جلوگیری از مخفی شدن صفحه لودینگ تا زمانی که فونت‌ها لود شوند
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   const { success: dbSuccess, error: dbError } = useMigrations(db, migrations);
   
-  // لود کردن فونت‌ها
   const [fontsLoaded, fontError] = useFonts({
-    'Vazir': require('../assets/fonts/Vazirmatn-Regular.ttf'), // نام فایل خود را جایگزین کنید
+    'Vazir': require('../assets/fonts/Vazirmatn-Regular.ttf'), 
     'Vazir-Bold': require('../assets/fonts/Vazirmatn-Bold.ttf'),
   });
 
@@ -34,7 +32,6 @@ export default function RootLayout() {
     );
   }
 
-  // صبر می‌کنیم تا هم دیتابیس و هم فونت‌ها آماده شوند
   if (!dbSuccess || !fontsLoaded) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
@@ -43,10 +40,23 @@ export default function RootLayout() {
     );
   }
 
-return (
+  return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="(tabs)" />
+        <Stack.Screen 
+          name="category-detail/[id]" 
+          options={{
+            headerShown: true,
+            headerTitle: 'جزئیات دسته‌بندی',
+            headerTitleAlign: 'center',
+            headerStyle: {
+              backgroundColor: '#FFFFFF',
+            },
+            headerShadowVisible: false,
+            headerBackTitle: 'بازگشت',
+          }}
+        />
       </Stack>
     </GestureHandlerRootView>
   );

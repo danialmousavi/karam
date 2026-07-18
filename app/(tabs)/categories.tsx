@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, Platform } from 'react-native';
 import { useIsFocused } from '@react-navigation/native';
+import { useRouter } from 'expo-router'; // ✅ استفاده از useRouter
 import { colors } from '../../theme/colors';
 import { db, Category, Task } from '../../services/database';
 import CustomAlert from '../../components/CustomAlert';
@@ -9,20 +10,18 @@ import CategoriesHeader from '../../components/categories/CategoriesHeader';
 import CategoryGrid from '../../components/categories/CategoryGrid';
 import AddCategoryModal from '../../components/categories/AddCategoryModal';
 import { PASTEL_PALETTE } from '../../components/categories/ColorPalette';
-import { AVAILABLE_ICONS } from '../../components/categories/IconSelector';
 
 export default function CategoriesScreen() {
   const isFocused = useIsFocused();
+  const router = useRouter(); // ✅ برای ناوبری به صفحه داخلی
   const [categories, setCategories] = useState<Category[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [modalVisible, setModalVisible] = useState(false);
   
-  // Stateهای فرم
   const [name, setName] = useState('');
   const [selectedColorIndex, setSelectedColorIndex] = useState(0);
   const [selectedIcon, setSelectedIcon] = useState('user');
 
-  // استیت آلرت
   const [alertConfig, setAlertConfig] = useState<{
     visible: boolean;
     type: 'success' | 'danger' | 'warning';
@@ -38,7 +37,6 @@ export default function CategoriesScreen() {
     onConfirm: () => {},
   });
 
-  // بارگذاری داده‌ها
   const loadData = async () => {
     const loadedCategories = await db.getCategories();
     const loadedTasks = await db.getTasks();
@@ -50,12 +48,15 @@ export default function CategoriesScreen() {
     if (isFocused) loadData();
   }, [isFocused]);
 
-  // محاسبه تعداد تسک‌های باقی‌مانده
   const getTaskCount = (categoryId: string) => {
     return tasks.filter(t => t.categoryId === categoryId && !t.completed).length;
   };
 
-  // درخواست حذف دسته‌بندی
+  // ✅ کلیک روی دسته‌بندی - هدایت به صفحه جزئیات
+  const handleCategoryPress = (categoryId: string) => {
+    router.push(`/category-detail/${categoryId}`);
+  };
+
   const handleDeleteRequest = (id: string, categoryName: string) => {
     setAlertConfig({
       visible: true,
@@ -71,7 +72,6 @@ export default function CategoriesScreen() {
     });
   };
 
-  // ایجاد دسته‌بندی جدید
   const handleCreateCategory = async () => {
     if (!name.trim()) {
       setAlertConfig({
@@ -93,13 +93,11 @@ export default function CategoriesScreen() {
       icon: selectedIcon,
     });
 
-    // ریست فرم
     setName('');
     setSelectedColorIndex(0);
     setSelectedIcon('user');
     setModalVisible(false);
     
-    // نمایش پیام موفقیت
     setTimeout(() => {
       setAlertConfig({
         visible: true,
@@ -124,6 +122,7 @@ export default function CategoriesScreen() {
         tasks={tasks}
         onDeleteCategory={handleDeleteRequest}
         getTaskCount={getTaskCount}
+        onCategoryPress={handleCategoryPress} // ✅ اضافه شد
       />
 
       <FloatingActionButton onPress={() => setModalVisible(true)} />

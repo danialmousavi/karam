@@ -1,3 +1,4 @@
+// components/categories/CategoryGrid.tsx
 import React from 'react';
 import { FlatList, StyleSheet } from 'react-native';
 import { colors } from '../../theme/colors';
@@ -9,12 +10,14 @@ interface CategoryGridProps {
   tasks: any[];
   onDeleteCategory: (id: string, name: string) => void;
   getTaskCount: (categoryId: string) => number;
+  onCategoryPress: (id: string) => void; // ✅ اضافه شد
 }
 
 export default function CategoryGrid({ 
   categories, 
   onDeleteCategory, 
-  getTaskCount 
+  getTaskCount,
+  onCategoryPress 
 }: CategoryGridProps) {
   return (
     <FlatList
@@ -28,6 +31,7 @@ export default function CategoryGrid({
           category={item}
           taskCount={getTaskCount(item.id)}
           onDelete={onDeleteCategory}
+          onPress={onCategoryPress}
         />
       )}
     />

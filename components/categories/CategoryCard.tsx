@@ -1,3 +1,4 @@
+// components/categories/CategoryCard.tsx
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Feather } from '@expo/vector-icons';
@@ -8,11 +9,21 @@ interface CategoryCardProps {
   category: Category;
   taskCount: number;
   onDelete: (id: string, name: string) => void;
+  onPress: (id: string) => void; // ✅ اضافه شد
 }
 
-export default function CategoryCard({ category, taskCount, onDelete }: CategoryCardProps) {
+export default function CategoryCard({ 
+  category, 
+  taskCount, 
+  onDelete, 
+  onPress 
+}: CategoryCardProps) {
   return (
-    <View style={[styles.card, { backgroundColor: category.color }]}>
+    <TouchableOpacity 
+      style={[styles.card, { backgroundColor: category.color }]} 
+      onPress={() => onPress(category.id)}
+      activeOpacity={0.7}
+    >
       <View style={styles.cardHeader}>
         <View style={[styles.iconWrapper, { backgroundColor: 'rgba(255,255,255,0.6)' }]}>
           <Feather name={category.icon as any} size={20} color={category.textColor} />
@@ -28,7 +39,7 @@ export default function CategoryCard({ category, taskCount, onDelete }: Category
       <Text style={[styles.cardCount, { color: category.textColor }]}>
         {taskCount} کار باقی‌مانده
       </Text>
-    </View>
+    </TouchableOpacity>
   );
 }
 
