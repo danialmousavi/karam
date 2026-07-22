@@ -13,9 +13,13 @@ interface CalendarStripProps {
 export default function CalendarStrip({ selectedDate, onSelectDate, tasks }: CalendarStripProps) {
   const todayString = moment().format('jYYYY/jMM/jDD');
 
+  // متغیرهای تنظیم بازه تقویم (به راحتی می‌توانی تغییرشان دهی)
+  const PAST_DAYS = 365;   // ۱ سال گذشته
+  const FUTURE_DAYS = 365; // ۱ سال آینده
+
   const calendarDays = useMemo(() => {
     const days = [];
-    for (let i = -7; i <= 30; i++) {
+    for (let i = -PAST_DAYS; i <= FUTURE_DAYS; i++) {
       const date = moment().add(i, 'days');
       days.push({
         fullDate: date.format('jYYYY/jMM/jDD'),
@@ -36,8 +40,19 @@ export default function CalendarStrip({ selectedDate, onSelectDate, tasks }: Cal
         data={calendarDays}
         keyExtractor={(item) => item.fullDate}
         contentContainerStyle={styles.calendarList}
-        initialScrollIndex={7}
+        
+        // ایندکس اسکرول اولیه را دقیقاً روی روز "امروز" تنظیم می‌کنیم
+        initialScrollIndex={PAST_DAYS} 
+        
         getItemLayout={(data, index) => ({ length: 68, offset: 68 * index, index })}
+        
+        // --- پراپ‌های بهینه‌سازی پرفورمنس برای لیست‌های بزرگ ---
+        initialNumToRender={7} // تعداد آیتم‌هایی که در لود اولیه ساخته می‌شوند
+        maxToRenderPerBatch={14} // تعداد آیتم‌هایی که در هر اسکرول به حافظه اضافه می‌شوند
+        windowSize={5} // مدیریت حافظه (آیتم‌های دورتر از دید را از حافظه پاک می‌کند)
+        removeClippedSubviews={true} // برای اندروید عالی است و رم را خالی نگه می‌دارد
+        // --------------------------------------------------------
+
         renderItem={({ item: day }) => {
           const isSelected = selectedDate === day.fullDate;
           const isToday = day.fullDate === todayString;
