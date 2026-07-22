@@ -11,7 +11,7 @@ import {
   StyleSheet,
 } from 'react-native';
 import moment from 'moment-jalaali';
-import { colors } from '../../theme/colors';
+import { useTheme } from '../../context/ThemeContext';
 import { Category } from '../../services/database';
 import CategoryChip from './CategoryChip';
 import DateChip from './DateChip';
@@ -58,6 +58,8 @@ export default function AddTaskModal({
   onMinuteChange,
   onSelectAllWeek,
 }: AddTaskModalProps) {
+  const { colors } = useTheme();
+
   const calendarDays = useMemo(() => {
     const days = [];
     for (let i = -7; i <= 30; i++) {
@@ -94,21 +96,28 @@ export default function AddTaskModal({
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={styles.modalOverlay}
+        style={[styles.modalOverlay, { backgroundColor: 'rgba(0,0,0,0.4)' }]}
       >
-        <View style={styles.modalContent}>
-          <View style={styles.modalDragHandle} />
-          <Text style={styles.modalTitle}>ثبت کار جدید ✨</Text>
+        <View style={[styles.modalContent, { backgroundColor: colors.surface }]}>
+          <View style={[styles.modalDragHandle, { backgroundColor: colors.border }]} />
+          <Text style={[styles.modalTitle, { color: colors.primaryDark }]}>ثبت کار جدید ✨</Text>
 
           <TextInput
-            style={styles.input}
+            style={[
+              styles.input,
+              {
+                backgroundColor: colors.background,
+                borderColor: colors.border,
+                color: colors.text,
+              },
+            ]}
             placeholder="می‌خوای چیکار کنی؟..."
             placeholderTextColor={colors.textMuted}
             value={newTaskTitle}
             onChangeText={setNewTaskTitle}
           />
 
-          <Text style={styles.sectionLabel}>دسته‌بندی رو انتخاب کن:</Text>
+          <Text style={[styles.sectionLabel, { color: colors.text }]}>دسته‌بندی رو انتخاب کن:</Text>
           <View style={styles.horizontalListContainer}>
             <FlatList
               horizontal
@@ -128,9 +137,9 @@ export default function AddTaskModal({
           </View>
 
           <View style={styles.dateSelectionHeader}>
-            <Text style={styles.sectionLabel}>برای چه روزهایی؟</Text>
+            <Text style={[styles.sectionLabel, { color: colors.text }]}>برای چه روزهایی؟</Text>
             <TouchableOpacity onPress={onSelectAllWeek}>
-              <Text style={styles.selectAllText}>+ تا آخر هفته (جمعه)</Text>
+              <Text style={[styles.selectAllText, { color: colors.primaryDark }]}>+ تا آخر هفته (جمعه)</Text>
             </TouchableOpacity>
           </View>
 
@@ -162,11 +171,25 @@ export default function AddTaskModal({
           />
 
           <View style={styles.modalButtons}>
-            <TouchableOpacity style={[styles.btn, styles.btnCancel]} onPress={onClose}>
-              <Text style={styles.btnCancelText}>انصراف</Text>
+            <TouchableOpacity
+              style={[
+                styles.btn,
+                styles.btnCancel,
+                {
+                  backgroundColor: colors.background,
+                  borderColor: colors.border,
+                  borderWidth: 1,
+                },
+              ]}
+              onPress={onClose}
+            >
+              <Text style={[styles.btnCancelText, { color: colors.textMuted }]}>انصراف</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={[styles.btn, styles.btnSave]} onPress={onSave}>
-              <Text style={styles.btnSaveText}>ثبت کار</Text>
+            <TouchableOpacity
+              style={[styles.btn, styles.btnSave, { backgroundColor: colors.primaryDark }]}
+              onPress={onSave}
+            >
+              <Text style={[styles.btnSaveText, { color: colors.surface }]}>ثبت کار</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -176,9 +199,11 @@ export default function AddTaskModal({
 }
 
 const styles = StyleSheet.create({
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' },
+  modalOverlay: {
+    flex: 1,
+    justifyContent: 'flex-end',
+  },
   modalContent: {
-    backgroundColor: colors.surface,
     borderTopLeftRadius: 30,
     borderTopRightRadius: 30,
     padding: 24,
@@ -187,7 +212,6 @@ const styles = StyleSheet.create({
   modalDragHandle: {
     width: 40,
     height: 5,
-    backgroundColor: colors.border,
     borderRadius: 3,
     alignSelf: 'center',
     marginBottom: 20,
@@ -195,21 +219,17 @@ const styles = StyleSheet.create({
   modalTitle: {
     fontFamily: 'Vazir-Bold',
     fontSize: 18,
-    color: colors.primaryDark,
     textAlign: 'right',
     marginBottom: 20,
   },
   input: {
-    backgroundColor: colors.background,
     borderRadius: 14,
     padding: 16,
     fontFamily: 'Vazir-Bold',
     fontSize: 15,
     textAlign: 'right',
-    color: colors.text,
     marginBottom: 20,
     borderWidth: 1,
-    borderColor: colors.border,
   },
   dateSelectionHeader: {
     flexDirection: 'row-reverse',
@@ -217,19 +237,38 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 12,
   },
-  selectAllText: { fontFamily: 'Vazir-Bold', fontSize: 12, color: colors.primaryDark },
+  selectAllText: {
+    fontFamily: 'Vazir-Bold',
+    fontSize: 12,
+  },
   horizontalListContainer: { marginBottom: 24 },
   horizontalScrollContent: { alignItems: 'center', paddingHorizontal: 4 },
-  sectionLabel: { fontFamily: 'Vazir-Bold', fontSize: 13, color: colors.text, textAlign: 'right' },
-  modalButtons: { flexDirection: 'row', justifyContent: 'space-between' },
-  btn: { flex: 1, height: 52, borderRadius: 16, justifyContent: 'center', alignItems: 'center' },
-  btnCancel: {
-    backgroundColor: colors.background,
-    marginRight: 10,
-    borderWidth: 1,
-    borderColor: colors.border,
+  sectionLabel: {
+    fontFamily: 'Vazir-Bold',
+    fontSize: 13,
+    textAlign: 'right',
   },
-  btnCancelText: { fontFamily: 'Vazir-Bold', fontSize: 14, color: colors.textMuted },
-  btnSave: { backgroundColor: colors.primaryDark },
-  btnSaveText: { fontFamily: 'Vazir-Bold', fontSize: 14, color: colors.surface },
+  modalButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  btn: {
+    flex: 1,
+    height: 52,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  btnCancel: {
+    marginRight: 10,
+  },
+  btnCancelText: {
+    fontFamily: 'Vazir-Bold',
+    fontSize: 14,
+  },
+  btnSave: {},
+  btnSaveText: {
+    fontFamily: 'Vazir-Bold',
+    fontSize: 14,
+  },
 });

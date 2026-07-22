@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet } from 'react-native';
 import moment from 'moment-jalaali';
-import { colors } from '../../theme/colors';
+import { useTheme } from '../../context/ThemeContext';
 import { Task } from '../../services/database';
 
 interface CalendarStripProps {
@@ -11,15 +11,12 @@ interface CalendarStripProps {
 }
 
 export default function CalendarStrip({ selectedDate, onSelectDate, tasks }: CalendarStripProps) {
+  const { colors } = useTheme();
   const todayString = moment().format('jYYYY/jMM/jDD');
-
-  // متغیرهای تنظیم بازه تقویم (به راحتی می‌توانی تغییرشان دهی)
-  const PAST_DAYS = 365;   // ۱ سال گذشته
-  const FUTURE_DAYS = 365; // ۱ سال آینده
 
   const calendarDays = useMemo(() => {
     const days = [];
-    for (let i = -PAST_DAYS; i <= FUTURE_DAYS; i++) {
+    for (let i = -7; i <= 30; i++) {
       const date = moment().add(i, 'days');
       days.push({
         fullDate: date.format('jYYYY/jMM/jDD'),
@@ -40,19 +37,8 @@ export default function CalendarStrip({ selectedDate, onSelectDate, tasks }: Cal
         data={calendarDays}
         keyExtractor={(item) => item.fullDate}
         contentContainerStyle={styles.calendarList}
-        
-        // ایندکس اسکرول اولیه را دقیقاً روی روز "امروز" تنظیم می‌کنیم
-        initialScrollIndex={PAST_DAYS} 
-        
+        initialScrollIndex={7}
         getItemLayout={(data, index) => ({ length: 68, offset: 68 * index, index })}
-        
-        // --- پراپ‌های بهینه‌سازی پرفورمنس برای لیست‌های بزرگ ---
-        initialNumToRender={7} // تعداد آیتم‌هایی که در لود اولیه ساخته می‌شوند
-        maxToRenderPerBatch={14} // تعداد آیتم‌هایی که در هر اسکرول به حافظه اضافه می‌شوند
-        windowSize={5} // مدیریت حافظه (آیتم‌های دورتر از دید را از حافظه پاک می‌کند)
-        removeClippedSubviews={true} // برای اندروید عالی است و رم را خالی نگه می‌دارد
-        // --------------------------------------------------------
-
         renderItem={({ item: day }) => {
           const isSelected = selectedDate === day.fullDate;
           const isToday = day.fullDate === todayString;
@@ -60,22 +46,46 @@ export default function CalendarStrip({ selectedDate, onSelectDate, tasks }: Cal
             <TouchableOpacity
               style={[
                 styles.dateFlag,
-                isSelected && styles.dateFlagSelected,
-                isToday && !isSelected && styles.dateFlagToday,
+                {
+                  backgroundColor: colors.surface,
+                  borderColor: colors.border,
+                },
+                isSelected && { 
+                  backgroundColor: colors.primaryDark, 
+                  borderColor: colors.primaryDark,
+                  transform: [{ scale: 1.05 }],
+                },
+                isToday && !isSelected && { borderColor: colors.primaryDark, borderWidth: 2 },
               ]}
               onPress={() => onSelectDate(day.fullDate)}
             >
-              <Text style={[styles.dateFlagName, isSelected && styles.dateFlagTextSelected]}>
+              <Text style={[
+                styles.dateFlagName, 
+                { color: colors.textMuted },
+                isSelected && { color: colors.surface },
+              ]}>
                 {day.dayName}
               </Text>
-              <Text style={[styles.dateFlagNum, isSelected && styles.dateFlagTextSelected]}>
+              <Text style={[
+                styles.dateFlagNum, 
+                { color: colors.text },
+                isSelected && { color: colors.surface },
+              ]}>
                 {day.dayNum}
               </Text>
-              <Text style={[styles.dateFlagMonth, isSelected && styles.dateFlagTextSelected]}>
+              <Text style={[
+                styles.dateFlagMonth, 
+                { color: colors.textMuted },
+                isSelected && { color: colors.surface },
+              ]}>
                 {day.monthName}
               </Text>
               {tasks.some((t) => t.date === day.fullDate && !t.completed) && (
-                <View style={[styles.taskIndicator, isSelected && { backgroundColor: colors.surface }]} />
+                <View style={[
+                  styles.taskIndicator, 
+                  { backgroundColor: colors.primaryDark },
+                  isSelected && { backgroundColor: colors.surface },
+                ]} />
               )}
             </TouchableOpacity>
           );
@@ -91,31 +101,32 @@ const styles = StyleSheet.create({
   dateFlag: {
     width: 56,
     height: 90,
-    backgroundColor: colors.surface,
     borderRadius: 20,
     justifyContent: 'center',
     alignItems: 'center',
     marginHorizontal: 6,
     borderWidth: 1,
-    borderColor: colors.border,
     elevation: 1,
   },
-  dateFlagSelected: {
-    backgroundColor: colors.primaryDark,
-    borderColor: colors.primaryDark,
-    transform: [{ scale: 1.05 }],
+  dateFlagName: {
+    fontFamily: 'Vazir-Bold',
+    fontSize: 11,
+    marginBottom: 2,
   },
-  dateFlagToday: { borderColor: colors.primaryDark, borderWidth: 2 },
-  dateFlagName: { fontFamily: 'Vazir-Bold', fontSize: 11, color: colors.textMuted, marginBottom: 2 },
-  dateFlagNum: { fontFamily: 'Vazir-Bold', fontSize: 18, color: colors.text },
-  dateFlagMonth: { fontFamily: 'Vazir-Medium', fontSize: 12, color: colors.textMuted, marginTop: 2 },
-  dateFlagTextSelected: { color: colors.surface },
+  dateFlagNum: {
+    fontFamily: 'Vazir-Bold',
+    fontSize: 18,
+  },
+  dateFlagMonth: {
+    fontFamily: 'Vazir',
+    fontSize: 12,
+    marginTop: 2,
+  },
   taskIndicator: {
     position: 'absolute',
     bottom: 6,
     width: 4,
     height: 4,
     borderRadius: 2,
-    backgroundColor: colors.primaryDark,
   },
 });

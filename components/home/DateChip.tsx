@@ -1,6 +1,6 @@
 import React from 'react';
 import { TouchableOpacity, Text, StyleSheet } from 'react-native';
-import { colors } from '../../theme/colors';
+import { useTheme } from '../../context/ThemeContext';
 
 interface DateChipProps {
   day: {
@@ -14,18 +14,48 @@ interface DateChipProps {
 }
 
 export default function DateChip({ day, isSelected, onSelect }: DateChipProps) {
+  const { colors } = useTheme();
+
   return (
     <TouchableOpacity
-      style={[styles.dateChip, isSelected && styles.dateChipSelected]}
+      style={[
+        styles.dateChip,
+        {
+          backgroundColor: colors.background,
+          borderColor: colors.border,
+        },
+        isSelected && {
+          backgroundColor: colors.primaryDark,
+          borderColor: colors.primaryDark,
+        },
+      ]}
       onPress={() => onSelect(day.fullDate)}
     >
-      <Text style={[styles.dateChipDayName, isSelected && styles.dateChipTextSelected]}>
+      <Text
+        style={[
+          styles.dateChipDayName,
+          { color: colors.textMuted },
+          isSelected && { color: colors.surface },
+        ]}
+      >
         {day.dayName}
       </Text>
-      <Text style={[styles.dateChipDate, isSelected && styles.dateChipTextSelected]}>
+      <Text
+        style={[
+          styles.dateChipDate,
+          { color: colors.text },
+          isSelected && { color: colors.surface },
+        ]}
+      >
         {day.dayNum}
       </Text>
-      <Text style={[styles.dateChipMonth, isSelected && styles.dateChipTextSelected]}>
+      <Text
+        style={[
+          styles.dateChipMonth,
+          { color: colors.textMuted },
+          isSelected && { color: colors.surface },
+        ]}
+      >
         {day.monthName}
       </Text>
     </TouchableOpacity>
@@ -37,16 +67,23 @@ const styles = StyleSheet.create({
     width: 52,
     height: 82,
     borderRadius: 14,
-    backgroundColor: colors.background,
     justifyContent: 'center',
     alignItems: 'center',
     marginHorizontal: 5,
     borderWidth: 1,
-    borderColor: colors.border,
   },
-  dateChipSelected: { backgroundColor: colors.primaryDark, borderColor: colors.primaryDark },
-  dateChipDayName: { fontFamily: 'Vazir-Bold', fontSize: 10, color: colors.textMuted, marginBottom: 2 },
-  dateChipDate: { fontFamily: 'Vazir-Bold', fontSize: 15, color: colors.text },
-  dateChipMonth: { fontFamily: 'Vazir-Medium', fontSize: 11, color: colors.textMuted, marginTop: 2 },
-  dateChipTextSelected: { color: colors.surface },
+  dateChipDayName: {
+    fontFamily: 'Vazir-Bold',
+    fontSize: 10,
+    marginBottom: 2,
+  },
+  dateChipDate: {
+    fontFamily: 'Vazir-Bold',
+    fontSize: 15,
+  },
+  dateChipMonth: {
+    fontFamily: 'Vazir',
+    fontSize: 11,
+    marginTop: 2,
+  },
 });

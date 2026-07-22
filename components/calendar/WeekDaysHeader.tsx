@@ -1,14 +1,17 @@
+// components/calendar/WeekDaysHeader.tsx
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { colors } from '../../theme/colors';
+import { useTheme } from '../../context/ThemeContext';
 
 const WEEK_DAYS = ['ش', 'ی', 'د', 'س', 'چ', 'پ', 'ج'];
 
 export default function WeekDaysHeader() {
+  const { colors } = useTheme();
+
   return (
     <View style={styles.weekDaysContainer}>
       {WEEK_DAYS.map((day) => (
-        <Text key={day} style={styles.weekDay}>
+        <Text key={day} style={[styles.weekDay, { color: colors.textMuted }]}>
           {day}
         </Text>
       ))}
@@ -25,7 +28,6 @@ const styles = StyleSheet.create({
   weekDay: {
     width: '14.28%',
     textAlign: 'center',
-    color: colors.textMuted,
     fontFamily: 'Vazir-Bold',
     fontSize: 13,
   },

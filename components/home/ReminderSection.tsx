@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, Switch, StyleSheet } from 'react-native';
-import { colors } from '../../theme/colors';
+import { useTheme } from '../../context/ThemeContext';
 import TimePicker from '../TimePicker';
 
 interface ReminderSectionProps {
@@ -20,8 +20,19 @@ export default function ReminderSection({
   onHourChange,
   onMinuteChange,
 }: ReminderSectionProps) {
+  const { colors } = useTheme();
+
   return (
-    <View style={styles.reminderContainer}>
+    <View
+      style={[
+        styles.reminderContainer,
+        {
+          backgroundColor: colors.background,
+          borderColor: colors.border,
+          borderWidth: 1,
+        },
+      ]}
+    >
       <View style={styles.reminderHeader}>
         <Switch
           value={isEnabled}
@@ -29,7 +40,7 @@ export default function ReminderSection({
           trackColor={{ false: colors.border, true: colors.primaryDark }}
           thumbColor={colors.surface}
         />
-        <Text style={styles.sectionLabel}>یادآوری با آلارم 🔔</Text>
+        <Text style={[styles.sectionLabel, { color: colors.text }]}>یادآوری با آلارم 🔔</Text>
       </View>
 
       {isEnabled && (
@@ -47,12 +58,17 @@ export default function ReminderSection({
 const styles = StyleSheet.create({
   reminderContainer: {
     marginBottom: 24,
-    backgroundColor: colors.background,
     padding: 16,
     borderRadius: 16,
-    borderWidth: 1,
-    borderColor: colors.border,
   },
-  reminderHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  sectionLabel: { fontFamily: 'Vazir-Bold', fontSize: 13, color: colors.text, textAlign: 'right' },
+  reminderHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  sectionLabel: {
+    fontFamily: 'Vazir-Bold',
+    fontSize: 13,
+    textAlign: 'right',
+  },
 });

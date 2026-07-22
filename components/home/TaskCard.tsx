@@ -1,8 +1,15 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Feather } from '@expo/vector-icons';
-import { colors } from '../../theme/colors';
-import { Category } from '../../services/database';
+import { useTheme } from '../../context/ThemeContext';
+
+interface CategoryDisplay {
+  id?: string;
+  name: string;
+  color: string;
+  textColor: string;
+  icon: string;
+}
 
 interface TaskCardProps {
   task: {
@@ -12,23 +19,40 @@ interface TaskCardProps {
     categoryId: string;
     time?: string | null;
   };
-  category: Category;
+  category: CategoryDisplay;
   onToggle: (id: string) => void;
   onDelete: (id: string) => void;
 }
 
 export default function TaskCard({ task, category, onToggle, onDelete }: TaskCardProps) {
+  const { colors } = useTheme();
+
   return (
-    <View style={[styles.taskCard, task.completed && styles.taskCardCompleted]}>
+    <View style={[
+      styles.taskCard,
+      { 
+        backgroundColor: colors.surface,
+        borderColor: colors.border,
+      },
+      task.completed && { backgroundColor: colors.background, opacity: 0.7 }
+    ]}>
       <View style={styles.taskLeft}>
         <TouchableOpacity
-          style={[styles.checkbox, task.completed && styles.checkboxChecked]}
+          style={[
+            styles.checkbox,
+            { borderColor: colors.border },
+            task.completed && { backgroundColor: colors.primaryDark, borderColor: colors.primaryDark }
+          ]}
           onPress={() => onToggle(task.id)}
         >
           {task.completed && <Feather name="check" size={16} color={colors.surface} />}
         </TouchableOpacity>
         <View style={styles.taskInfo}>
-          <Text style={[styles.taskTitle, task.completed && styles.taskTitleCompleted]}>
+          <Text style={[
+            styles.taskTitle,
+            { color: colors.text },
+            task.completed && { textDecorationLine: 'line-through', color: colors.textMuted }
+          ]}>
             {task.title}
           </Text>
           <View style={styles.badgeContainer}>
@@ -50,7 +74,7 @@ export default function TaskCard({ task, category, onToggle, onDelete }: TaskCar
                   },
                 ]}
               >
-                <Feather name="bell" size={10} color={colors.primaryDark} />
+                <Feather name="clock" size={10} color={colors.primaryDark} />
                 <Text style={[styles.categoryBadgeText, { color: colors.primaryDark }]}>
                   {task.time}
                 </Text>
@@ -71,31 +95,38 @@ const styles = StyleSheet.create({
     flexDirection: 'row-reverse',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: colors.surface,
     padding: 16,
     borderRadius: 20,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: colors.border,
     elevation: 1,
   },
-  taskCardCompleted: { backgroundColor: colors.background, opacity: 0.7 },
-  taskLeft: { flexDirection: 'row-reverse', alignItems: 'center', flex: 1 },
+  taskLeft: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    flex: 1,
+  },
   checkbox: {
     width: 26,
     height: 26,
     borderRadius: 8,
     borderWidth: 2,
-    borderColor: colors.border,
     justifyContent: 'center',
     alignItems: 'center',
     marginLeft: 12,
   },
-  checkboxChecked: { backgroundColor: colors.primaryDark, borderColor: colors.primaryDark },
-  taskInfo: { flex: 1 },
-  taskTitle: { fontFamily: 'Vazir-Bold', fontSize: 15, color: colors.text, textAlign: 'right', marginBottom: 6 },
-  taskTitleCompleted: { textDecorationLine: 'line-through', color: colors.textMuted },
-  badgeContainer: { flexDirection: 'row-reverse' },
+  taskInfo: {
+    flex: 1,
+  },
+  taskTitle: {
+    fontFamily: 'Vazir-Bold',
+    fontSize: 15,
+    textAlign: 'right',
+    marginBottom: 6,
+  },
+  badgeContainer: {
+    flexDirection: 'row-reverse',
+  },
   categoryBadge: {
     flexDirection: 'row-reverse',
     alignItems: 'center',
@@ -104,6 +135,12 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     alignSelf: 'flex-start',
   },
-  categoryBadgeText: { fontFamily: 'Vazir-Bold', fontSize: 10, marginRight: 4 },
-  deleteBtn: { padding: 8 },
+  categoryBadgeText: {
+    fontFamily: 'Vazir-Bold',
+    fontSize: 10,
+    marginRight: 4,
+  },
+  deleteBtn: {
+    padding: 8,
+  },
 });

@@ -1,7 +1,7 @@
 // components/categories/CategoryGrid.tsx
 import React from 'react';
 import { FlatList, StyleSheet } from 'react-native';
-import { colors } from '../../theme/colors';
+import { useTheme } from '../../context/ThemeContext';
 import { Category } from '../../services/database';
 import CategoryCard from './CategoryCard';
 
@@ -10,7 +10,7 @@ interface CategoryGridProps {
   tasks: any[];
   onDeleteCategory: (id: string, name: string) => void;
   getTaskCount: (categoryId: string) => number;
-  onCategoryPress: (id: string) => void; // ✅ اضافه شد
+  onCategoryPress: (id: string) => void;
 }
 
 export default function CategoryGrid({ 
@@ -19,13 +19,15 @@ export default function CategoryGrid({
   getTaskCount,
   onCategoryPress 
 }: CategoryGridProps) {
+  const { colors } = useTheme();
+
   return (
     <FlatList
       data={categories}
       numColumns={2}
       keyExtractor={(item) => item.id}
       columnWrapperStyle={styles.row}
-      contentContainerStyle={styles.listContainer}
+      contentContainerStyle={[styles.listContainer, { paddingBottom: 120 }]}
       renderItem={({ item }) => (
         <CategoryCard
           category={item}
@@ -39,6 +41,6 @@ export default function CategoryGrid({
 }
 
 const styles = StyleSheet.create({
-  listContainer: { paddingHorizontal: 16, paddingBottom: 120 },
+  listContainer: { paddingHorizontal: 16 },
   row: { justifyContent: 'space-between' },
 });

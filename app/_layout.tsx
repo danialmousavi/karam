@@ -1,3 +1,4 @@
+// app/_layout.tsx
 import { useEffect } from 'react';
 import { View, Text, ActivityIndicator } from 'react-native';
 import { Stack } from 'expo-router';
@@ -7,14 +8,16 @@ import { useFonts } from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
 import { db } from '../db/index';
 import migrations from '../drizzle/migrations';
+import { ThemeProvider } from '../context/ThemeContext';
 
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   const { success: dbSuccess, error: dbError } = useMigrations(db, migrations);
-  
+
+  // ✅ فقط دو فونت اصلی
   const [fontsLoaded, fontError] = useFonts({
-    'Vazir': require('../assets/fonts/Vazirmatn-Regular.ttf'), 
+    'Vazir': require('../assets/fonts/Vazirmatn-Regular.ttf'),
     'Vazir-Bold': require('../assets/fonts/Vazirmatn-Bold.ttf'),
   });
 
@@ -42,22 +45,24 @@ export default function RootLayout() {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <Stack screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="(tabs)" />
-        <Stack.Screen 
-          name="category-detail/[id]" 
-          options={{
-            headerShown: true,
-            headerTitle: 'جزئیات دسته‌بندی',
-            headerTitleAlign: 'center',
-            headerStyle: {
-              backgroundColor: '#FFFFFF',
-            },
-            headerShadowVisible: false,
-            headerBackTitle: 'بازگشت',
-          }}
-        />
-      </Stack>
+      <ThemeProvider>
+        <Stack screenOptions={{ headerShown: false }}>
+          <Stack.Screen name="(tabs)" />
+          <Stack.Screen
+            name="category-detail/[id]"
+            options={{
+              headerShown: true,
+              headerTitle: 'جزئیات دسته‌بندی',
+              headerTitleAlign: 'center',
+              headerStyle: {
+                backgroundColor: '#FFFFFF',
+              },
+              headerShadowVisible: false,
+              headerBackTitle: 'بازگشت',
+            }}
+          />
+        </Stack>
+      </ThemeProvider>
     </GestureHandlerRootView>
   );
 }

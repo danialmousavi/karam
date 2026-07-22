@@ -1,8 +1,9 @@
+// app/(tabs)/calendar.tsx
 import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, Platform, SafeAreaView, StatusBar } from 'react-native';
 import moment from 'moment-jalaali';
 import { useIsFocused } from '@react-navigation/native';
-import { colors } from '../../theme/colors';
+import { useTheme } from '../../context/ThemeContext';
 import { db, Task, Category } from '../../services/database';
 import { scheduleTaskNotification, requestNotificationPermissions } from '../../services/notifications';
 import CustomAlert from '../../components/CustomAlert';
@@ -17,6 +18,7 @@ import AddTaskModal from '../../components/calendar/AddTaskModal';
 moment.loadPersian({ dialect: 'persian-modern', usePersianDigits: false });
 
 export default function CalendarScreen() {
+  const { colors } = useTheme();
   const isFocused = useIsFocused();
   
   const [selectedDate, setSelectedDate] = useState(moment().format('jYYYY/jMM/jDD'));
@@ -26,14 +28,12 @@ export default function CalendarScreen() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [modalVisible, setModalVisible] = useState(false);
 
-  // Stateهای فرم افزودن تسک (مثل صفحه هوم)
   const [newTaskTitle, setNewTaskTitle] = useState('');
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>('');
   const [isReminderEnabled, setIsReminderEnabled] = useState(false);
   const [selectedHour, setSelectedHour] = useState(moment().hour());
   const [selectedMinute, setSelectedMinute] = useState(moment().minute());
 
-  // استیت آلرت
   const [alertConfig, setAlertConfig] = useState({
     visible: false,
     type: 'danger' as 'success' | 'danger' | 'warning',
@@ -43,7 +43,6 @@ export default function CalendarScreen() {
     onConfirm: () => {},
   });
 
-  // بارگذاری داده‌ها
   const loadData = async () => {
     const loadedCategories = await db.getCategories();
     setCategories(loadedCategories);
@@ -64,7 +63,6 @@ export default function CalendarScreen() {
     }
   }, [isFocused, selectedDate]);
 
-  // نمایش آلرت
   const showAlert = (title: string, message: string, type: 'warning' | 'danger' | 'success') => {
     setAlertConfig({
       visible: true,
@@ -76,7 +74,6 @@ export default function CalendarScreen() {
     });
   };
 
-  // اضافه کردن تسک (با پشتیبانی از تایمر و تاریخ‌های چندگانه)
   const handleAddTask = async () => {
     if (!newTaskTitle.trim()) {
       showAlert('عنوان تسک خالیه! ⚠️', 'لطفاً بنویس که دقیقاً چه کاری می‌خوای انجام بدی.', 'warning');
@@ -108,7 +105,6 @@ export default function CalendarScreen() {
       notifId: notifId,
     });
 
-    // ریست فرم
     setNewTaskTitle('');
     setIsReminderEnabled(false);
     setSelectedHour(moment().hour());
@@ -117,13 +113,11 @@ export default function CalendarScreen() {
     loadData();
   };
 
-  // تغییر وضعیت تسک
   const handleToggleTask = async (id: string) => {
     await db.toggleTask(id);
     loadData();
   };
 
-  // حذف تسک
   const handleDeleteTask = (id: string) => {
     setAlertConfig({
       visible: true,
@@ -139,7 +133,6 @@ export default function CalendarScreen() {
     });
   };
 
-  // گرفتن جزئیات دسته‌بندی
   const getCategoryDetails = (categoryId: string): Category => {
     const found = categories.find((c) => c.id === categoryId);
     if (found) return found;
@@ -152,18 +145,24 @@ export default function CalendarScreen() {
     };
   };
 
-  // رفتن به امروز
   const goToToday = () => {
     setMonthView(moment());
     setSelectedDate(moment().format('jYYYY/jMM/jDD'));
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={styles.contentWrapper}>
         <CalendarHeader onGoToToday={goToToday} />
 
-        <View style={styles.calendarCard}>
+        <View style={[
+          styles.calendarCard,
+          {
+            backgroundColor: colors.surface,
+            borderColor: colors.border,
+            shadowColor: '#000',
+          }
+        ]}>
           <MonthNavigator
             currentMonth={monthView}
             onPrevMonth={() => setMonthView(monthView.clone().subtract(1, 'jMonth'))}
@@ -224,7 +223,6 @@ export default function CalendarScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
     paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 0) + 10 : 10,
   },
   contentWrapper: {
@@ -232,17 +230,14 @@ const styles = StyleSheet.create({
     paddingTop: Platform.OS === 'ios' ? 0 : 5,
   },
   calendarCard: {
-    backgroundColor: colors.surface,
     marginHorizontal: 20,
-    marginTop: 10, 
+    marginTop: 10,
     borderRadius: 24,
     paddingVertical: 15,
     elevation: 3,
-    shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.05,
     shadowRadius: 10,
     borderWidth: 1,
-    borderColor: colors.border,
   },
 });

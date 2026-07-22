@@ -1,7 +1,8 @@
+// components/categories/IconSelector.tsx
 import React from 'react';
 import { ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
 import { Feather } from '@expo/vector-icons';
-import { colors } from '../../theme/colors';
+import { useTheme } from '../../context/ThemeContext';
 
 export const AVAILABLE_ICONS = [
   'user', 'briefcase', 'activity', 'shopping-bag', 
@@ -14,6 +15,8 @@ interface IconSelectorProps {
 }
 
 export default function IconSelector({ selectedIcon, onSelect }: IconSelectorProps) {
+  const { colors } = useTheme();
+
   return (
     <ScrollView 
       horizontal 
@@ -26,6 +29,10 @@ export default function IconSelector({ selectedIcon, onSelect }: IconSelectorPro
           key={iconName}
           style={[
             styles.iconSelect,
+            {
+              backgroundColor: colors.background,
+              borderColor: colors.border,
+            },
             selectedIcon === iconName && { 
               borderColor: colors.primaryDark, 
               borderWidth: 2 
@@ -51,11 +58,9 @@ const styles = StyleSheet.create({
     width: 44, 
     height: 44, 
     borderRadius: 12, 
-    backgroundColor: colors.background, 
     justifyContent: 'center', 
     alignItems: 'center', 
     marginLeft: 10, 
     borderWidth: 1, 
-    borderColor: colors.border 
   },
 });

@@ -1,7 +1,8 @@
+// components/calendar/CalendarGrid.tsx
 import React, { useMemo } from 'react';
 import { View, StyleSheet } from 'react-native';
 import moment from 'moment-jalaali';
-import { colors } from '../../theme/colors';
+import { useTheme } from '../../context/ThemeContext';
 import { Task } from '../../services/database';
 import DayCell from './DayCell';
 
@@ -18,6 +19,8 @@ export default function CalendarGrid({
   onSelectDate,
   allTasks,
 }: CalendarGridProps) {
+  const { colors } = useTheme();
+
   const days = useMemo(() => {
     const year = (currentMonth as any).jYear();
     const month = (currentMonth as any).jMonth();

@@ -1,31 +1,29 @@
+// app/(tabs)/_layout.tsx
 import { Tabs } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
-import { colors } from '../../theme/colors';
 import { Platform } from 'react-native';
+import { useTheme } from '../../context/ThemeContext';
 
 export default function TabLayout() {
+  const { colors } = useTheme();
+
   return (
     <Tabs
-      initialRouteName="index" // 🌟 با این خط، صفحه اول همیشه "خانه" خواهد بود
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: colors.primaryDark, 
-        tabBarInactiveTintColor: colors.textMuted, 
+        tabBarActiveTintColor: colors.primaryDark,
+        tabBarInactiveTintColor: colors.textMuted,
         tabBarStyle: {
-          // جادوی شناور کردن تب‌بار 👇
           position: 'absolute',
           bottom: Platform.OS === 'ios' ? 28 : 20,
           left: 20,
           right: 20,
-          
           height: 72,
           borderRadius: 24,
           backgroundColor: colors.surface,
           borderTopWidth: 0,
-
           paddingBottom: 12,
           paddingTop: 12,
-
           elevation: 8,
           shadowColor: colors.primaryDark,
           shadowOffset: { width: 0, height: 8 },
@@ -39,9 +37,10 @@ export default function TabLayout() {
         },
         tabBarIconStyle: {
           marginBottom: -2,
-        }
+        },
       }}
     >
+      {/* تنظیمات (چپ‌ترین) */}
       <Tabs.Screen
         name="settings"
         options={{
@@ -50,6 +49,7 @@ export default function TabLayout() {
         }}
       />
 
+      {/* تقویم */}
       <Tabs.Screen
         name="calendar"
         options={{
@@ -58,6 +58,7 @@ export default function TabLayout() {
         }}
       />
 
+      {/* دسته‌ها */}
       <Tabs.Screen
         name="categories"
         options={{
@@ -66,6 +67,7 @@ export default function TabLayout() {
         }}
       />
 
+      {/* خانه (راست‌ترین) */}
       <Tabs.Screen
         name="index"
         options={{

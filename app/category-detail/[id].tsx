@@ -1,3 +1,4 @@
+// app/category-detail/[id].tsx
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -9,10 +10,10 @@ import {
   SafeAreaView,
   StatusBar,
 } from 'react-native';
-import { useLocalSearchParams, useRouter, Stack } from 'expo-router'; 
+import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import moment from 'moment-jalaali';
-import { colors } from '../../theme/colors';
+import { useTheme } from '../../context/ThemeContext';
 import { db, Task, Category } from '../../services/database';
 import CustomAlert from '../../components/CustomAlert';
 import TaskCard from '../../components/home/TaskCard';
@@ -20,12 +21,12 @@ import TaskCard from '../../components/home/TaskCard';
 moment.loadPersian({ dialect: 'persian-modern', usePersianDigits: false });
 
 export default function CategoryDetailScreen() {
+  const { colors } = useTheme();
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   
   const [category, setCategory] = useState<Category | null>(null);
   const [tasks, setTasks] = useState<Task[]>([]);
-  const [allTasks, setAllTasks] = useState<Task[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -45,7 +46,6 @@ export default function CategoryDetailScreen() {
       const loadedTasks = await db.getTasks();
       
       setCategories(loadedCategories);
-      setAllTasks(loadedTasks);
       
       const foundCategory = loadedCategories.find(c => c.id === id);
       setCategory(foundCategory || null);
@@ -136,18 +136,18 @@ export default function CategoryDetailScreen() {
 
   if (isLoading) {
     return (
-      <View style={styles.loadingContainer}>
-        <Text style={styles.loadingText}>در حال بارگذاری...</Text>
+      <View style={[styles.loadingContainer, { backgroundColor: colors.background }]}>
+        <Text style={[styles.loadingText, { color: colors.textMuted }]}>در حال بارگذاری...</Text>
       </View>
     );
   }
 
   if (!category) {
     return (
-      <View style={styles.loadingContainer}>
-        <Text style={styles.loadingText}>دسته‌بندی یافت نشد!</Text>
+      <View style={[styles.loadingContainer, { backgroundColor: colors.background }]}>
+        <Text style={[styles.loadingText, { color: colors.textMuted }]}>دسته‌بندی یافت نشد!</Text>
         <TouchableOpacity 
-          style={styles.backButton}
+          style={[styles.backButton, { backgroundColor: colors.primaryDark }]}
           onPress={() => router.back()}
         >
           <Text style={styles.backButtonText}>بازگشت</Text>
@@ -157,8 +157,7 @@ export default function CategoryDetailScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
-      {/* ✅ تنظیمات هدر با Stack.Screen */}
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <Stack.Screen
         options={{
           headerTitle: category.name,
@@ -174,14 +173,13 @@ export default function CategoryDetailScreen() {
           headerShadowVisible: false,
           headerBackTitle: 'بازگشت',
           headerBackTitleStyle: {
-            fontFamily: 'Vazir-Medium',
+            fontFamily: 'Vazir',
             fontSize: 14,
           },
           headerTintColor: colors.primaryDark,
         }}
       />
 
-      {/* هدر با اطلاعات دسته‌بندی */}
       <View style={[styles.categoryHeader, { backgroundColor: category.color }]}>
         <View style={styles.categoryHeaderContent}>
           <View style={[styles.categoryIconWrapper, { backgroundColor: 'rgba(255,255,255,0.3)' }]}>
@@ -196,12 +194,11 @@ export default function CategoryDetailScreen() {
         </View>
       </View>
 
-      {/* لیست تسک‌ها */}
       {tasks.length === 0 ? (
         <View style={styles.emptyContainer}>
           <Feather name="check-circle" size={64} color={colors.textMuted} />
-          <Text style={styles.emptyTitle}>همه کارها انجام شدن! 🎉</Text>
-          <Text style={styles.emptySubtitle}>
+          <Text style={[styles.emptyTitle, { color: colors.text }]}>همه کارها انجام شدن! 🎉</Text>
+          <Text style={[styles.emptySubtitle, { color: colors.textMuted }]}>
             هیچ کار انجام نشده‌ای در این دسته‌بندی نیست.
           </Text>
         </View>
@@ -213,9 +210,9 @@ export default function CategoryDetailScreen() {
           renderItem={({ item: date }) => (
             <View style={styles.dateSection}>
               <View style={styles.dateHeader}>
-                <View style={styles.dateLine} />
-                <Text style={styles.dateTitle}>{formatDate(date)}</Text>
-                <View style={styles.dateLine} />
+                <View style={[styles.dateLine, { backgroundColor: colors.border }]} />
+                <Text style={[styles.dateTitle, { color: colors.textMuted }]}>{formatDate(date)}</Text>
+                <View style={[styles.dateLine, { backgroundColor: colors.border }]} />
               </View>
               {groupedTasks[date].map((task) => {
                 const categoryDetails = getCategoryDetails(task.categoryId);
@@ -250,30 +247,26 @@ export default function CategoryDetailScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: colors.background,
   },
   loadingText: {
     fontFamily: 'Vazir-Bold',
     fontSize: 16,
-    color: colors.textMuted,
   },
   backButton: {
     marginTop: 20,
     paddingHorizontal: 24,
     paddingVertical: 12,
-    backgroundColor: colors.primaryDark,
     borderRadius: 12,
   },
   backButtonText: {
     fontFamily: 'Vazir-Bold',
     fontSize: 14,
-    color: colors.surface,
+    color: '#FFFFFF',
   },
   categoryHeader: {
     marginHorizontal: 20,
@@ -305,7 +298,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   taskCountText: {
-    fontFamily: 'Vazir-Medium',
+    fontFamily: 'Vazir',
     fontSize: 14,
     opacity: 0.8,
   },
@@ -325,12 +318,10 @@ const styles = StyleSheet.create({
   dateLine: {
     flex: 1,
     height: 1,
-    backgroundColor: colors.border,
   },
   dateTitle: {
     fontFamily: 'Vazir-Bold',
     fontSize: 14,
-    color: colors.textMuted,
     paddingHorizontal: 12,
   },
   emptyContainer: {
@@ -342,14 +333,12 @@ const styles = StyleSheet.create({
   emptyTitle: {
     fontFamily: 'Vazir-Bold',
     fontSize: 18,
-    color: colors.text,
     marginTop: 16,
     textAlign: 'center',
   },
   emptySubtitle: {
-    fontFamily: 'Vazir-Medium',
+    fontFamily: 'Vazir',
     fontSize: 14,
-    color: colors.textMuted,
     textAlign: 'center',
     marginTop: 8,
   },

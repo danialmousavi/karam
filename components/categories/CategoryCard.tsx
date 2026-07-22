@@ -2,14 +2,14 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Feather } from '@expo/vector-icons';
-import { colors } from '../../theme/colors';
+import { useTheme } from '../../context/ThemeContext';
 import { Category } from '../../services/database';
 
 interface CategoryCardProps {
   category: Category;
   taskCount: number;
   onDelete: (id: string, name: string) => void;
-  onPress: (id: string) => void; // ✅ اضافه شد
+  onPress: (id: string) => void;
 }
 
 export default function CategoryCard({ 
@@ -18,9 +18,17 @@ export default function CategoryCard({
   onDelete, 
   onPress 
 }: CategoryCardProps) {
+  const { colors } = useTheme();
+
   return (
     <TouchableOpacity 
-      style={[styles.card, { backgroundColor: category.color }]} 
+      style={[
+        styles.card, 
+        { 
+          backgroundColor: category.color,
+          shadowColor: '#000',
+        }
+      ]} 
       onPress={() => onPress(category.id)}
       activeOpacity={0.7}
     >
@@ -52,7 +60,6 @@ const styles = StyleSheet.create({
     padding: 14, 
     justifyContent: 'space-between', 
     elevation: 2, 
-    shadowColor: '#000', 
     shadowOpacity: 0.05, 
     shadowRadius: 5, 
     shadowOffset: { width: 0, height: 3 } 

@@ -12,8 +12,7 @@ import {
   Switch,
 } from 'react-native';
 import moment from 'moment-jalaali';
-import { Feather } from '@expo/vector-icons';
-import { colors } from '../../theme/colors';
+import { useTheme } from '../../context/ThemeContext';
 import { Category } from '../../services/database';
 import TimePicker from '../TimePicker';
 import CategoryChip from '../home/CategoryChip';
@@ -54,15 +53,13 @@ export default function AddTaskModal({
   onHourChange,
   onMinuteChange,
 }: AddTaskModalProps) {
-  // برای انتخاب چند روز (مثل صفحه هوم)
+  const { colors } = useTheme();
   const [selectedDates, setSelectedDates] = useState<string[]>([selectedDate]);
 
-  // وقتی تاریخ انتخاب شده تغییر میکنه، لیست رو آپدیت کن
   useEffect(() => {
     setSelectedDates([selectedDate]);
   }, [selectedDate]);
 
-  // ساخت لیست روزهای آینده
   const futureDays = useMemo(() => {
     const days = [];
     const startDate = moment(selectedDate, 'jYYYY/jMM/jDD');
@@ -86,23 +83,25 @@ export default function AddTaskModal({
     }
   };
 
-  const handleSave = () => {
-    // قبل از ذخیره، تاریخ‌های انتخاب شده رو ست کنیم
-    onSave();
-  };
-
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={styles.modalOverlay}
+        style={[styles.modalOverlay, { backgroundColor: 'rgba(0,0,0,0.4)' }]}
       >
-        <View style={styles.modalContent}>
-          <View style={styles.modalDragHandle} />
-          <Text style={styles.modalTitle}>ثبت کار برای {selectedDate} ✨</Text>
+        <View style={[styles.modalContent, { backgroundColor: colors.surface }]}>
+          <View style={[styles.modalDragHandle, { backgroundColor: colors.border }]} />
+          <Text style={[styles.modalTitle, { color: colors.primaryDark }]}>ثبت کار برای {selectedDate} ✨</Text>
 
           <TextInput
-            style={styles.input}
+            style={[
+              styles.input,
+              {
+                backgroundColor: colors.background,
+                borderColor: colors.border,
+                color: colors.text,
+              },
+            ]}
             placeholder="می‌خوای چیکار کنی؟..."
             placeholderTextColor={colors.textMuted}
             value={newTaskTitle}
@@ -110,7 +109,7 @@ export default function AddTaskModal({
             autoFocus={true}
           />
 
-          <Text style={styles.sectionLabel}>دسته‌بندی رو انتخاب کن:</Text>
+          <Text style={[styles.sectionLabel, { color: colors.text }]}>دسته‌بندی رو انتخاب کن:</Text>
           <View style={styles.horizontalListContainer}>
             <FlatList
               horizontal
@@ -129,10 +128,33 @@ export default function AddTaskModal({
             />
           </View>
 
+          <Text style={[styles.sectionLabel, { color: colors.text }]}>برای چه روزهایی؟</Text>
+          <View style={styles.horizontalListContainer}>
+            <FlatList
+              horizontal
+              inverted
+              showsHorizontalScrollIndicator={false}
+              data={futureDays}
+              keyExtractor={(item) => item.fullDate}
+              contentContainerStyle={styles.horizontalScrollContent}
+              renderItem={({ item: day }) => (
+                <DateChip
+                  day={day}
+                  isSelected={selectedDates.includes(day.fullDate)}
+                  onSelect={toggleDate}
+                />
+              )}
+            />
+          </View>
 
-
-          {/* بخش یادآوری با تایمر - دقیقاً مثل صفحه هوم */}
-          <View style={styles.reminderContainer}>
+          <View style={[
+            styles.reminderContainer,
+            {
+              backgroundColor: colors.background,
+              borderColor: colors.border,
+              borderWidth: 1,
+            },
+          ]}>
             <View style={styles.reminderHeader}>
               <Switch
                 value={isReminderEnabled}
@@ -140,7 +162,7 @@ export default function AddTaskModal({
                 trackColor={{ false: colors.border, true: colors.primaryDark }}
                 thumbColor={colors.surface}
               />
-              <Text style={styles.sectionLabel}>یادآوری با آلارم 🔔</Text>
+              <Text style={[styles.sectionLabel, { color: colors.text }]}>یادآوری با آلارم 🔔</Text>
             </View>
 
             {isReminderEnabled && (
@@ -154,11 +176,25 @@ export default function AddTaskModal({
           </View>
 
           <View style={styles.modalButtons}>
-            <TouchableOpacity style={[styles.btn, styles.btnCancel]} onPress={onClose}>
-              <Text style={styles.btnCancelText}>انصراف</Text>
+            <TouchableOpacity
+              style={[
+                styles.btn,
+                styles.btnCancel,
+                {
+                  backgroundColor: colors.background,
+                  borderColor: colors.border,
+                  borderWidth: 1,
+                },
+              ]}
+              onPress={onClose}
+            >
+              <Text style={[styles.btnCancelText, { color: colors.textMuted }]}>انصراف</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={[styles.btn, styles.btnSave]} onPress={handleSave}>
-              <Text style={styles.btnSaveText}>ثبت کار</Text>
+            <TouchableOpacity
+              style={[styles.btn, styles.btnSave, { backgroundColor: colors.primaryDark }]}
+              onPress={onSave}
+            >
+              <Text style={[styles.btnSaveText, { color: colors.surface }]}>ثبت کار</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -170,11 +206,9 @@ export default function AddTaskModal({
 const styles = StyleSheet.create({
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.4)',
     justifyContent: 'flex-end',
   },
   modalContent: {
-    backgroundColor: colors.surface,
     borderTopLeftRadius: 30,
     borderTopRightRadius: 30,
     padding: 24,
@@ -183,7 +217,6 @@ const styles = StyleSheet.create({
   modalDragHandle: {
     width: 40,
     height: 5,
-    backgroundColor: colors.border,
     borderRadius: 3,
     alignSelf: 'center',
     marginBottom: 20,
@@ -191,26 +224,21 @@ const styles = StyleSheet.create({
   modalTitle: {
     fontFamily: 'Vazir-Bold',
     fontSize: 18,
-    color: colors.primaryDark,
     textAlign: 'right',
     marginBottom: 20,
   },
   input: {
-    backgroundColor: colors.background,
     borderRadius: 14,
     padding: 16,
     fontFamily: 'Vazir-Bold',
     fontSize: 15,
     textAlign: 'right',
-    color: colors.text,
     marginBottom: 20,
     borderWidth: 1,
-    borderColor: colors.border,
   },
   sectionLabel: {
     fontFamily: 'Vazir-Bold',
     fontSize: 13,
-    color: colors.text,
     textAlign: 'right',
     marginBottom: 12,
   },
@@ -218,26 +246,35 @@ const styles = StyleSheet.create({
   horizontalScrollContent: { alignItems: 'center', paddingHorizontal: 4 },
   reminderContainer: {
     marginBottom: 24,
-    backgroundColor: colors.background,
     padding: 16,
     borderRadius: 16,
-    borderWidth: 1,
-    borderColor: colors.border,
   },
   reminderHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  modalButtons: { flexDirection: 'row', justifyContent: 'space-between' },
-  btn: { flex: 1, height: 52, borderRadius: 16, justifyContent: 'center', alignItems: 'center' },
-  btnCancel: {
-    backgroundColor: colors.background,
-    marginRight: 10,
-    borderWidth: 1,
-    borderColor: colors.border,
+  modalButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
   },
-  btnCancelText: { fontFamily: 'Vazir-Bold', fontSize: 14, color: colors.textMuted },
-  btnSave: { backgroundColor: colors.primaryDark },
-  btnSaveText: { fontFamily: 'Vazir-Bold', fontSize: 14, color: colors.surface },
+  btn: {
+    flex: 1,
+    height: 52,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  btnCancel: {
+    marginRight: 10,
+  },
+  btnCancelText: {
+    fontFamily: 'Vazir-Bold',
+    fontSize: 14,
+  },
+  btnSave: {},
+  btnSaveText: {
+    fontFamily: 'Vazir-Bold',
+    fontSize: 14,
+  },
 });

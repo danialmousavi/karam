@@ -1,6 +1,7 @@
+// components/calendar/CalendarTaskList.tsx
 import React from 'react';
 import { View, Text, FlatList, StyleSheet } from 'react-native';
-import { colors } from '../../theme/colors';
+import { useTheme } from '../../context/ThemeContext';
 import { Task, Category } from '../../services/database';
 import EmptyState from '../home/EmptyState';
 import TaskCard from '../home/TaskCard';
@@ -22,7 +23,8 @@ export default function CalendarTaskList({
   onDeleteTask,
   getCategoryDetails,
 }: CalendarTaskListProps) {
-  const todayStr = new Date().toISOString().split('T')[0]; // placeholder
+  const { colors } = useTheme();
+  const todayStr = new Date().toISOString().split('T')[0];
 
   if (tasks.length === 0) {
     return <EmptyState />;
@@ -31,7 +33,7 @@ export default function CalendarTaskList({
   return (
     <View style={styles.tasksSection}>
       <View style={styles.taskListHeader}>
-        <Text style={styles.taskLabel}>
+        <Text style={[styles.taskLabel, { color: colors.text }]}>
           برنامه {selectedDate === todayStr ? 'امروز' : selectedDate}
         </Text>
       </View>
@@ -63,7 +65,6 @@ const styles = StyleSheet.create({
   taskLabel: {
     fontFamily: 'Vazir-Bold',
     fontSize: 16,
-    color: colors.text,
     textAlign: 'right',
   },
   listContainer: { paddingHorizontal: 20, paddingBottom: 130 },

@@ -1,3 +1,4 @@
+// components/TimePicker.tsx
 import React, { useRef, useEffect } from 'react';
 import { 
   View, 
@@ -8,20 +9,20 @@ import {
   NativeScrollEvent,
   TouchableOpacity
 } from 'react-native';
-import { colors } from '../theme/colors'; 
+import { useTheme } from '../context/ThemeContext';
 
 const ITEM_HEIGHT = 50; 
 const VISIBLE_ITEMS = 3; 
 
 // 🌟 تکرار لیست برای ایجاد افکت چرخشی بی‌نهایت
-const REPEATS = 200; // لیست را 200 بار تکرار می‌کنیم تا هرگز تمام نشود
-const MIDDLE_CYCLE = Math.floor(REPEATS / 2); // نقطه شروع را وسط در نظر می‌گیریم (دور 100)
+const REPEATS = 200;
+const MIDDLE_CYCLE = Math.floor(REPEATS / 2);
 
 // آرایه پایه
 const baseHours = Array.from({ length: 24 }, (_, i) => i);
 const baseMinutes = Array.from({ length: 60 }, (_, i) => i);
 
-// ساخت آرایه بی‌نهایت به همراه فضاهای خالی در ابتدا و انتها برای جلوگیری از باگ
+// ساخت آرایه بی‌نهایت به همراه فضاهای خالی در ابتدا و انتها
 const hours = ['', ...Array(REPEATS).fill(baseHours).flat(), ''];
 const minutes = ['', ...Array(REPEATS).fill(baseMinutes).flat(), ''];
 
@@ -32,7 +33,13 @@ interface TimePickerProps {
   onMinuteChange: (minute: number) => void;
 }
 
-export default function TimePicker({ selectedHour, selectedMinute, onHourChange, onMinuteChange }: TimePickerProps) {
+export default function TimePicker({ 
+  selectedHour, 
+  selectedMinute, 
+  onHourChange, 
+  onMinuteChange 
+}: TimePickerProps) {
+  const { colors } = useTheme();
   const hourListRef = useRef<FlatList>(null);
   const minuteListRef = useRef<FlatList>(null);
 
@@ -45,13 +52,13 @@ export default function TimePicker({ selectedHour, selectedMinute, onHourChange,
       hourListRef.current?.scrollToOffset({ offset: initialHourOffset, animated: false });
       minuteListRef.current?.scrollToOffset({ offset: initialMinuteOffset, animated: false });
     }, 100);
-  }, []); // فقط یکبار هنگام لود
+  }, []);
 
   // هندل کردن زمان توقف اسکرول و آپدیت استیت
   const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>, type: 'hour' | 'minute') => {
     const offsetY = event.nativeEvent.contentOffset.y;
     const topIndex = Math.round(offsetY / ITEM_HEIGHT);
-    const centerIndex = topIndex + 1; // ایندکسی که دقیقاً وسط قرار می‌گیرد
+    const centerIndex = topIndex + 1;
     
     if (type === 'hour') {
       const value = hours[centerIndex];
@@ -64,9 +71,8 @@ export default function TimePicker({ selectedHour, selectedMinute, onHourChange,
 
   // هندل کردن لمس (Tap) روی اعداد
   const handleItemPress = (absoluteIndex: number, value: number | string, type: 'hour' | 'minute') => {
-    if (typeof value !== 'number') return; // اگر روی فضای خالی کلیک شد کاری نکن
+    if (typeof value !== 'number') return;
 
-    // محاسبه آفست برای اینکه آیتم لمس شده بیاید وسط کادر
     const targetOffset = (absoluteIndex - 1) * ITEM_HEIGHT;
 
     if (type === 'hour') {
@@ -91,7 +97,11 @@ export default function TimePicker({ selectedHour, selectedMinute, onHourChange,
         disabled={isEmpty} 
       >
         {!isEmpty && (
-          <Text style={[styles.itemText, isSelected && styles.selectedItemText]}>
+          <Text style={[
+            styles.itemText, 
+            { color: colors.textMuted },
+            isSelected && { color: colors.primaryDark, fontFamily: 'Vazir-Bold', fontSize: 28 }
+          ]}>
             {item.toString().padStart(2, '0')}
           </Text>
         )}
@@ -100,8 +110,14 @@ export default function TimePicker({ selectedHour, selectedMinute, onHourChange,
   };
 
   return (
-    <View style={styles.container}>
-      <View style={styles.highlightBand} pointerEvents="none" />
+    <View style={[
+      styles.container,
+      {
+        backgroundColor: colors.surface,
+        borderColor: colors.border,
+      }
+    ]}>
+      <View style={[styles.highlightBand, { backgroundColor: colors.background }]} pointerEvents="none" />
       
       <View style={styles.pickerWrapper}>
         {/* لیست ساعت‌ها */}
@@ -122,7 +138,7 @@ export default function TimePicker({ selectedHour, selectedMinute, onHourChange,
           />
         </View>
 
-        <Text style={styles.colon}>:</Text>
+        <Text style={[styles.colon, { color: colors.primaryDark }]}>:</Text>
 
         {/* لیست دقیقه‌ها */}
         <View style={styles.listContainer}>
@@ -149,10 +165,8 @@ export default function TimePicker({ selectedHour, selectedMinute, onHourChange,
 const styles = StyleSheet.create({
   container: {
     height: ITEM_HEIGHT * VISIBLE_ITEMS,
-    backgroundColor: colors.surface,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: colors.border,
     overflow: 'hidden',
     justifyContent: 'center',
     marginTop: 16,
@@ -163,7 +177,6 @@ const styles = StyleSheet.create({
     left: 12,
     right: 12,
     height: ITEM_HEIGHT,
-    backgroundColor: colors.background,
     borderRadius: 12,
   },
   pickerWrapper: {
@@ -183,19 +196,12 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   itemText: {
-    fontFamily: 'Vazir-Medium',
+    fontFamily: 'Vazir',
     fontSize: 22,
-    color: colors.textMuted,
-  },
-  selectedItemText: {
-    fontFamily: 'Vazir-Bold',
-    fontSize: 28,
-    color: colors.primaryDark,
   },
   colon: {
     fontFamily: 'Vazir-Bold',
     fontSize: 28,
-    color: colors.primaryDark,
     marginHorizontal: 15,
     marginBottom: 5,
   },

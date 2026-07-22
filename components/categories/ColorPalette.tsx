@@ -1,6 +1,7 @@
+// components/categories/ColorPalette.tsx
 import React from 'react';
 import { View, TouchableOpacity, StyleSheet } from 'react-native';
-import { colors } from '../../theme/colors';
+import { useTheme } from '../../context/ThemeContext';
 
 export const PASTEL_PALETTE = [
   { color: '#CE93D8', textColor: '#4A148C' }, // بنفش
@@ -17,6 +18,8 @@ interface ColorPaletteProps {
 }
 
 export default function ColorPalette({ selectedIndex, onSelect }: ColorPaletteProps) {
+  const { colors } = useTheme();
+
   return (
     <View style={styles.colorPalette}>
       {PASTEL_PALETTE.map((item, index) => (

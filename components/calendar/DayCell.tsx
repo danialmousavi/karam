@@ -1,6 +1,7 @@
+// components/calendar/DayCell.tsx
 import React from 'react';
 import { TouchableOpacity, Text, View, StyleSheet } from 'react-native';
-import { colors } from '../../theme/colors';
+import { useTheme } from '../../context/ThemeContext';
 
 interface DayCellProps {
   day: number | null;
@@ -19,6 +20,8 @@ export default function DayCell({
   hasPendingTasks,
   onSelect,
 }: DayCellProps) {
+  const { colors } = useTheme();
+
   if (!day) {
     return <View style={styles.dayCellEmpty} />;
   }
@@ -27,22 +30,28 @@ export default function DayCell({
     <TouchableOpacity
       style={[
         styles.dayCell,
-        isSelected && styles.selectedDay,
-        isToday && !isSelected && styles.todayCell,
+        { backgroundColor: 'transparent' },
+        isSelected && { backgroundColor: colors.primaryDark },
+        isToday && !isSelected && { borderWidth: 1.5, borderColor: colors.primaryDark },
       ]}
       onPress={() => onSelect(dateStr)}
     >
       <Text
         style={[
           styles.dayText,
-          isSelected && styles.selectedDayText,
-          isToday && !isSelected && styles.todayText,
+          { color: colors.text },
+          isSelected && { color: colors.surface },
+          isToday && !isSelected && { color: colors.primaryDark },
         ]}
       >
         {day}
       </Text>
       {hasPendingTasks && (
-        <View style={[styles.taskDot, isSelected && styles.taskDotSelected]} />
+        <View style={[
+          styles.taskDot,
+          { backgroundColor: colors.primaryDark },
+          isSelected && { backgroundColor: colors.surface },
+        ]} />
       )}
     </TouchableOpacity>
   );
@@ -62,33 +71,15 @@ const styles = StyleSheet.create({
     height: 42,
     marginVertical: 2,
   },
-  selectedDay: {
-    backgroundColor: colors.primaryDark,
-  },
-  todayCell: {
-    borderWidth: 1.5,
-    borderColor: colors.primaryDark,
-  },
   dayText: {
     fontSize: 14,
-    color: colors.text,
     fontFamily: 'Vazir-Bold',
-  },
-  selectedDayText: {
-    color: colors.surface,
-  },
-  todayText: {
-    color: colors.primaryDark,
   },
   taskDot: {
     width: 4,
     height: 4,
     borderRadius: 2,
-    backgroundColor: colors.primaryDark,
     position: 'absolute',
     bottom: 4,
-  },
-  taskDotSelected: {
-    backgroundColor: colors.surface,
   },
 });

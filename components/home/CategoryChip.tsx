@@ -1,7 +1,7 @@
 import React from 'react';
 import { TouchableOpacity, Text, StyleSheet } from 'react-native';
 import { Feather } from '@expo/vector-icons';
-import { colors } from '../../theme/colors';
+import { useTheme } from '../../context/ThemeContext';
 import { Category } from '../../services/database';
 
 interface CategoryChipProps {
@@ -11,11 +11,16 @@ interface CategoryChipProps {
 }
 
 export default function CategoryChip({ category, isSelected, onSelect }: CategoryChipProps) {
+  const { colors } = useTheme();
+
   return (
     <TouchableOpacity
       style={[
         styles.categoryChip,
-        { backgroundColor: isSelected ? category.color : colors.background },
+        {
+          backgroundColor: isSelected ? category.color : colors.background,
+          borderColor: colors.border,
+        },
         isSelected && { borderColor: category.textColor, borderWidth: 1 },
       ]}
       onPress={() => onSelect(category.id)}
@@ -46,7 +51,10 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     marginHorizontal: 5,
     borderWidth: 1,
-    borderColor: colors.border,
   },
-  categoryChipText: { fontFamily: 'Vazir-Bold', fontSize: 13, marginRight: 6 },
+  categoryChipText: {
+    fontFamily: 'Vazir-Bold',
+    fontSize: 13,
+    marginRight: 6,
+  },
 });

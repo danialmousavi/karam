@@ -1,8 +1,9 @@
+// app/(tabs)/index.tsx
 import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, Platform } from 'react-native';
 import moment from 'moment-jalaali';
 import { useIsFocused } from '@react-navigation/native';
-import { colors } from '../../theme/colors';
+import { useTheme } from '../../context/ThemeContext';
 import { db, Category, Task } from '../../services/database';
 import { scheduleTaskNotification, requestNotificationPermissions } from '../../services/notifications';
 import CustomAlert from '../../components/CustomAlert';
@@ -15,13 +16,13 @@ import FloatingActionButton from '../../components/home/FloatingActionButton';
 moment.loadPersian({ dialect: 'persian-modern', usePersianDigits: false });
 
 export default function HomeScreen() {
+  const { colors } = useTheme();
   const isFocused = useIsFocused();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [selectedDate, setSelectedDate] = useState<string>(moment().format('jYYYY/jMM/jDD'));
   const [modalVisible, setModalVisible] = useState(false);
 
-  // Stateهای فرم افزودن تسک
   const [newTaskTitle, setNewTaskTitle] = useState('');
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>('');
   const [selectedNewTaskDates, setSelectedNewTaskDates] = useState<string[]>([
@@ -31,7 +32,6 @@ export default function HomeScreen() {
   const [selectedHour, setSelectedHour] = useState(moment().hour());
   const [selectedMinute, setSelectedMinute] = useState(moment().minute());
 
-  // استیت آلرت
   const [alertConfig, setAlertConfig] = useState({
     visible: false,
     type: 'danger' as 'success' | 'danger' | 'warning',
@@ -41,7 +41,6 @@ export default function HomeScreen() {
     onConfirm: () => {},
   });
 
-  // بارگذاری داده‌ها
   const loadData = async () => {
     const loadedTasks = await db.getTasks();
     const loadedCategories = await db.getCategories();
@@ -59,23 +58,20 @@ export default function HomeScreen() {
     }
   }, [isFocused]);
 
-  // تسک‌های روز جاری
   const currentDayTasks = tasks.filter((t) => t.date === selectedDate).reverse();
 
-  // گرفتن جزئیات دسته‌بندی
-const getCategoryDetails = (categoryId: string): Category => {
-  const found = categories.find((c) => c.id === categoryId);
-  if (found) return found;
-  
-  return {
-    id: 'unknown',
-    name: 'نامشخص',
-    color: '#EEEEEE',
-    textColor: '#9e9e9e',
-    icon: 'box',
+  const getCategoryDetails = (categoryId: string): Category => {
+    const found = categories.find((c) => c.id === categoryId);
+    if (found) return found;
+    return {
+      id: 'unknown',
+      name: 'نامشخص',
+      color: '#EEEEEE',
+      textColor: '#9e9e9e',
+      icon: 'box',
+    };
   };
-};
-  // نمایش آلرت
+
   const showAlert = (title: string, message: string, type: 'warning' | 'danger' | 'success') => {
     setAlertConfig({
       visible: true,
@@ -87,30 +83,17 @@ const getCategoryDetails = (categoryId: string): Category => {
     });
   };
 
-  // اضافه کردن تسک
   const handleAddTask = async () => {
     if (!newTaskTitle.trim()) {
-      showAlert(
-        'عنوان تسک خالیه! ⚠️',
-        'لطفاً بنویس که دقیقاً چه کاری می‌خوای انجام بدی.',
-        'warning'
-      );
+      showAlert('عنوان تسک خالیه! ⚠️', 'لطفاً بنویس که دقیقاً چه کاری می‌خوای انجام بدی.', 'warning');
       return;
     }
     if (!selectedCategoryId) {
-      showAlert(
-        'دسته‌بندی انتخاب نشده! 📂',
-        'لطفاً مشخص کن این کار مربوط به کدوم دسته‌بندیه.',
-        'warning'
-      );
+      showAlert('دسته‌بندی انتخاب نشده! 📂', 'لطفاً مشخص کن این کار مربوط به کدوم دسته‌بندیه.', 'warning');
       return;
     }
     if (selectedNewTaskDates.length === 0) {
-      showAlert(
-        'روز انتخاب نشده! 📅',
-        'لطفاً حداقل یک روز رو برای انجام این کار انتخاب کن.',
-        'warning'
-      );
+      showAlert('روز انتخاب نشده! 📅', 'لطفاً حداقل یک روز رو برای انجام این کار انتخاب کن.', 'warning');
       return;
     }
 
@@ -122,11 +105,8 @@ const getCategoryDetails = (categoryId: string): Category => {
         .toString()
         .padStart(2, '0')}`;
       notifId =
-        (await scheduleTaskNotification(
-          newTaskTitle.trim(),
-          selectedNewTaskDates[0],
-          timeString
-        )) || null;
+        (await scheduleTaskNotification(newTaskTitle.trim(), selectedNewTaskDates[0], timeString)) ||
+        null;
     }
 
     await db.addTask({
@@ -137,7 +117,6 @@ const getCategoryDetails = (categoryId: string): Category => {
       notifId: notifId,
     });
 
-    // ریست فرم
     setNewTaskTitle('');
     setSelectedNewTaskDates([moment().format('jYYYY/jMM/jDD')]);
     setIsReminderEnabled(false);
@@ -147,13 +126,11 @@ const getCategoryDetails = (categoryId: string): Category => {
     loadData();
   };
 
-  // تغییر وضعیت تسک
   const handleToggleTask = async (id: string) => {
     await db.toggleTask(id);
     loadData();
   };
 
-  // درخواست حذف تسک
   const handleDeleteRequest = (id: string) => {
     setAlertConfig({
       visible: true,
@@ -169,7 +146,6 @@ const getCategoryDetails = (categoryId: string): Category => {
     });
   };
 
-  // انتخاب تا آخر هفته
   const selectUntilEndOfWeek = () => {
     const daysToSelect: string[] = [];
     let started = false;
@@ -189,7 +165,7 @@ const getCategoryDetails = (categoryId: string): Category => {
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <HomeHeader />
       <CalendarStrip
         selectedDate={selectedDate}
@@ -242,7 +218,6 @@ const getCategoryDetails = (categoryId: string): Category => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
     paddingTop: Platform.OS === 'ios' ? 60 : 40,
   },
 });

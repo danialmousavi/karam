@@ -1,8 +1,9 @@
+// app/(tabs)/categories.tsx
 import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, Platform } from 'react-native';
 import { useIsFocused } from '@react-navigation/native';
-import { useRouter } from 'expo-router'; // ✅ استفاده از useRouter
-import { colors } from '../../theme/colors';
+import { useRouter } from 'expo-router';
+import { useTheme } from '../../context/ThemeContext';
 import { db, Category, Task } from '../../services/database';
 import CustomAlert from '../../components/CustomAlert';
 import FloatingActionButton from '../../components/home/FloatingActionButton';
@@ -12,8 +13,9 @@ import AddCategoryModal from '../../components/categories/AddCategoryModal';
 import { PASTEL_PALETTE } from '../../components/categories/ColorPalette';
 
 export default function CategoriesScreen() {
+  const { colors } = useTheme();
   const isFocused = useIsFocused();
-  const router = useRouter(); // ✅ برای ناوبری به صفحه داخلی
+  const router = useRouter();
   const [categories, setCategories] = useState<Category[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [modalVisible, setModalVisible] = useState(false);
@@ -52,7 +54,6 @@ export default function CategoriesScreen() {
     return tasks.filter(t => t.categoryId === categoryId && !t.completed).length;
   };
 
-  // ✅ کلیک روی دسته‌بندی - هدایت به صفحه جزئیات
   const handleCategoryPress = (categoryId: string) => {
     router.push(`/category-detail/${categoryId}`);
   };
@@ -114,7 +115,7 @@ export default function CategoriesScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <CategoriesHeader />
       
       <CategoryGrid
@@ -122,7 +123,7 @@ export default function CategoriesScreen() {
         tasks={tasks}
         onDeleteCategory={handleDeleteRequest}
         getTaskCount={getTaskCount}
-        onCategoryPress={handleCategoryPress} // ✅ اضافه شد
+        onCategoryPress={handleCategoryPress}
       />
 
       <FloatingActionButton onPress={() => setModalVisible(true)} />
@@ -155,7 +156,6 @@ export default function CategoriesScreen() {
 const styles = StyleSheet.create({
   container: { 
     flex: 1, 
-    backgroundColor: colors.background, 
     paddingTop: Platform.OS === 'ios' ? 60 : 40 
   },
 });
