@@ -9,31 +9,289 @@ import {
   Switch,
   Platform,
   Modal,
-  Alert,
+  Share,
+  Linking,
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '../../context/ThemeContext';
 import { ThemeName } from '../../theme/colors';
+import CustomAlert from '../../components/CustomAlert';
+import TimePicker from '../../components/TimePicker';
+import * as Notifications from 'expo-notifications';
 
+// ============================================
+// کامپوننت SettingsItem
+// ============================================
+const SettingItem = ({
+  icon,
+  title,
+  subtitle,
+  type = 'link',
+  value,
+  onValueChange,
+  onPress,
+  danger = false,
+  last = false,
+}: any) => {
+  const { colors } = useTheme();
+
+  return (
+    <TouchableOpacity
+      style={[
+        styles.itemContainer,
+        !last && { borderBottomWidth: 1, borderBottomColor: colors.border },
+      ]}
+      onPress={onPress}
+      disabled={type === 'switch'}
+      activeOpacity={0.7}
+    >
+      <View style={styles.itemRight}>
+        <View style={[
+          styles.iconWrapper,
+          {
+            backgroundColor: colors.background,
+            borderColor: colors.border,
+          },
+          danger && { backgroundColor: '#FFE5E5', borderColor: '#FFCDD2' },
+        ]}>
+          <Feather 
+            name={icon} 
+            size={20} 
+            color={danger ? '#FF4444' : colors.primaryDark} 
+          />
+        </View>
+        <View style={styles.textContainer}>
+          <Text style={[
+            styles.itemTitle,
+            { color: colors.text },
+            danger && { color: '#FF4444' },
+          ]}>
+            {title}
+          </Text>
+          {subtitle && (
+            <Text style={[styles.itemSubtitle, { color: colors.textMuted }]}>
+              {subtitle}
+            </Text>
+          )}
+        </View>
+      </View>
+
+      <View style={styles.itemLeft}>
+        {type === 'switch' ? (
+          <Switch
+            value={value}
+            onValueChange={onValueChange}
+            trackColor={{ false: colors.border, true: colors.primaryDark }}
+            thumbColor={colors.surface}
+            style={{ transform: [{ scaleX: 0.9 }, { scaleY: 0.9 }] }}
+          />
+        ) : (
+          <Feather name="chevron-left" size={20} color={colors.textMuted} />
+        )}
+      </View>
+    </TouchableOpacity>
+  );
+};
+
+// ============================================
+// کامپوننت SettingsSection
+// ============================================
+const SettingsSection = ({ title, children }: { title: string; children: React.ReactNode }) => {
+  const { colors } = useTheme();
+
+  return (
+    <View style={styles.section}>
+      <Text style={[styles.sectionTitle, { color: colors.textMuted }]}>{title}</Text>
+      <View style={[
+        styles.card,
+        {
+          backgroundColor: colors.surface,
+          borderColor: colors.border,
+          borderWidth: 1,
+          shadowColor: '#000',
+        }
+      ]}>
+        {children}
+      </View>
+    </View>
+  );
+};
+
+// ============================================
+// کامپوننت ThemeSelector (مودال انتخاب تم)
+// ============================================
+const ThemeSelector = ({
+  visible,
+  onClose,
+}: {
+  visible: boolean;
+  onClose: () => void;
+}) => {
+  const { colors, themeName, setTheme, allThemes, isDarkMode } = useTheme();
+  
+  const themeOptions: { key: ThemeName; label: string; icon: string }[] = [
+    { key: 'light', label: 'روشن', icon: 'sun' },
+    { key: 'ocean', label: 'اقیانوسی', icon: 'droplet' },
+    { key: 'lavender', label: 'اسطوخودوس', icon: 'flower' },
+    { key: 'sunset', label: 'غروب', icon: 'sunset' },
+    { key: 'forest', label: 'جنگلی', icon: 'tree' },
+  ];
+
+  const handleSelectTheme = (theme: ThemeName) => {
+    setTheme(theme);
+    onClose();
+  };
+
+  const getBaseTheme = (): ThemeName => {
+    const baseNames = ['light', 'ocean', 'lavender', 'sunset', 'forest'];
+    for (const name of baseNames) {
+      if (themeName === name || themeName === `${name}Dark`) {
+        return name as ThemeName;
+      }
+    }
+    return 'light';
+  };
+
+  const baseTheme = getBaseTheme();
+
+  return (
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+      <View style={[styles.modalOverlay, { backgroundColor: 'rgba(0,0,0,0.5)' }]}>
+        <View style={[styles.modalContent, { backgroundColor: colors.surface }]}>
+          <View style={[styles.modalHandle, { backgroundColor: colors.border }]} />
+          <Text style={[styles.modalTitle, { color: colors.text }]}>🎨 انتخاب تم</Text>
+          
+          <View style={[styles.darkModeStatus, { backgroundColor: colors.background }]}>
+            <Text style={[styles.darkModeStatusText, { color: colors.text }]}>
+              {isDarkMode ? '🌙 حالت دارک فعال است' : '☀️ حالت روشن فعال است'}
+            </Text>
+            <Text style={[styles.darkModeStatusSub, { color: colors.textMuted }]}>
+              {isDarkMode ? 'نسخه دارک تم‌ها نمایش داده می‌شوند' : 'نسخه روشن تم‌ها نمایش داده می‌شوند'}
+            </Text>
+          </View>
+
+          <View style={styles.themeGrid}>
+            {themeOptions.map((theme) => {
+              const isSelected = baseTheme === theme.key;
+              const previewThemeName = isDarkMode ? `${theme.key}Dark` as ThemeName : theme.key as ThemeName;
+              const themeColors = allThemes[previewThemeName] || allThemes[theme.key as ThemeName];
+              
+              return (
+                <TouchableOpacity
+                  key={theme.key}
+                  style={[
+                    styles.themeOption,
+                    {
+                      backgroundColor: themeColors.surface,
+                      borderColor: isSelected ? colors.primaryDark : colors.border,
+                      borderWidth: isSelected ? 2 : 1,
+                    },
+                  ]}
+                  onPress={() => handleSelectTheme(theme.key as ThemeName)}
+                >
+                  <View
+                    style={[
+                      styles.themePreview,
+                      { backgroundColor: themeColors.primary },
+                    ]}
+                  >
+                    <Feather name={theme.icon as any} size={24} color={themeColors.surface} />
+                  </View>
+                  <Text style={[styles.themeLabel, { color: themeColors.text }]}>
+                    {theme.label}
+                  </Text>
+                  <View
+                    style={[
+                      styles.themeColorStrip,
+                      {
+                        backgroundColor: themeColors.border,
+                        borderColor: themeColors.border,
+                      },
+                    ]}
+                  >
+                    <View style={[styles.colorDot, { backgroundColor: themeColors.primary }]} />
+                    <View style={[styles.colorDot, { backgroundColor: themeColors.primaryDark }]} />
+                    <View style={[styles.colorDot, { backgroundColor: themeColors.textMuted }]} />
+                  </View>
+                  {isSelected && (
+                    <View style={styles.checkmark}>
+                      <Feather name="check-circle" size={20} color={colors.primaryDark} />
+                    </View>
+                  )}
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+
+          <TouchableOpacity
+            style={[
+              styles.modalCloseButton,
+              {
+                backgroundColor: colors.background,
+                borderColor: colors.border,
+                borderWidth: 1,
+              },
+            ]}
+            onPress={onClose}
+          >
+            <Text style={[styles.modalCloseText, { color: colors.textMuted }]}>بستن</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </Modal>
+  );
+};
+
+// ============================================
+// کامپوننت اصلی SettingsScreen
+// ============================================
 export default function SettingsScreen() {
-  const { colors, themeName, setTheme, allThemes } = useTheme();
-  const [notifications, setNotifications] = useState(true);
-  const [darkMode, setDarkMode] = useState(false);
+  const { 
+    colors, 
+    themeName, 
+    setTheme, 
+    allThemes, 
+    isDarkMode, 
+    toggleDarkMode,
+    useSystemTheme,
+    toggleSystemTheme,
+  } = useTheme();
+  
+  // استیت‌های تنظیمات
   const [themeModalVisible, setThemeModalVisible] = useState(false);
+  const [timePickerVisible, setTimePickerVisible] = useState(false);
+  const [selectedHour, setSelectedHour] = useState(9);
+  const [selectedMinute, setSelectedMinute] = useState(0);
+  const [reminderTime, setReminderTime] = useState('09:00');
+  
+  // استیت CustomAlert
+  const [alertConfig, setAlertConfig] = useState({
+    visible: false,
+    type: 'success' as 'success' | 'danger' | 'warning',
+    title: '',
+    message: '',
+    showCancel: false,
+    onConfirm: () => {},
+    onCancel: () => {},
+  });
 
-  // بارگذاری تنظیمات ذخیره شده
+  // ============================================
+  // توابع بارگذاری و ذخیره تنظیمات
+  // ============================================
   useEffect(() => {
     loadSettings();
   }, []);
 
   const loadSettings = async () => {
     try {
-      const savedNotifications = await AsyncStorage.getItem('@notifications_enabled');
-      const savedDarkMode = await AsyncStorage.getItem('@dark_mode_enabled');
-      
-      if (savedNotifications !== null) setNotifications(JSON.parse(savedNotifications));
-      if (savedDarkMode !== null) setDarkMode(JSON.parse(savedDarkMode));
+      const savedReminderTime = await AsyncStorage.getItem('@reminder_time');
+      if (savedReminderTime !== null) {
+        setReminderTime(savedReminderTime);
+        const [hour, minute] = savedReminderTime.split(':').map(Number);
+        setSelectedHour(hour);
+        setSelectedMinute(minute);
+      }
     } catch (error) {
       console.error('خطا در بارگذاری تنظیمات:', error);
     }
@@ -47,188 +305,184 @@ export default function SettingsScreen() {
     }
   };
 
-  const getThemeLabel = (theme: ThemeName) => {
-    const labels = {
-      light: 'پیش‌فرض',
-      ocean: 'اقیانوسی',
-      lavender: 'اسطوخودوس',
-      sunset: 'غروب',
-      forest: 'جنگلی',
-    };
-    return labels[theme] || 'پیش‌فرض';
+  // ============================================
+  // نمایش CustomAlert
+  // ============================================
+  const showAlert = (
+    title: string,
+    message: string,
+    type: 'success' | 'danger' | 'warning' = 'success',
+    showCancel: boolean = false,
+    onConfirm?: () => void,
+    onCancel?: () => void
+  ) => {
+    setAlertConfig({
+      visible: true,
+      type,
+      title,
+      message,
+      showCancel,
+      onConfirm: () => {
+        setAlertConfig(prev => ({ ...prev, visible: false }));
+        if (onConfirm) onConfirm();
+      },
+      onCancel: () => {
+        setAlertConfig(prev => ({ ...prev, visible: false }));
+        if (onCancel) onCancel();
+      },
+    });
   };
 
-  // ✅ کامپوننت SettingItem با استفاده از useTheme
-  const SettingItem = ({
-    icon,
-    title,
-    subtitle,
-    type = 'link',
-    value,
-    onValueChange,
-    onPress,
-    danger = false,
-    last = false,
-  }: any) => {
-    const { colors } = useTheme();
-
-    return (
-      <TouchableOpacity
-        style={[
-          styles.itemContainer,
-          !last && { borderBottomWidth: 1, borderBottomColor: colors.border },
-        ]}
-        onPress={onPress}
-        disabled={type === 'switch'}
-        activeOpacity={0.7}
-      >
-        <View style={styles.itemRight}>
-          <View style={[
-            styles.iconWrapper,
-            {
-              backgroundColor: colors.background,
-              borderColor: colors.border,
-            },
-            danger && { backgroundColor: '#FFE5E5', borderColor: '#FFCDD2' },
-          ]}>
-            <Feather 
-              name={icon} 
-              size={20} 
-              color={danger ? '#FF4444' : colors.primaryDark} 
-            />
-          </View>
-          <View style={styles.textContainer}>
-            <Text style={[
-              styles.itemTitle,
-              { color: colors.text },
-              danger && { color: '#FF4444' },
-            ]}>
-              {title}
-            </Text>
-            {subtitle && (
-              <Text style={[styles.itemSubtitle, { color: colors.textMuted }]}>
-                {subtitle}
-              </Text>
-            )}
-          </View>
-        </View>
-
-        <View style={styles.itemLeft}>
-          {type === 'switch' ? (
-            <Switch
-              value={value}
-              onValueChange={onValueChange}
-              trackColor={{ false: colors.border, true: colors.primaryDark }}
-              thumbColor={colors.surface}
-              style={{ transform: [{ scaleX: 0.9 }, { scaleY: 0.9 }] }}
-            />
-          ) : (
-            <Feather name="chevron-left" size={20} color={colors.textMuted} />
-          )}
-        </View>
-      </TouchableOpacity>
-    );
+  // ============================================
+  // ۱. تنظیم ساعت یادآوری
+  // ============================================
+  const handleSetReminderTime = () => {
+    setTimePickerVisible(true);
   };
 
-  // ✅ کامپوننت ThemeSelector با استفاده از useTheme
-  const ThemeSelector = () => {
-    const { colors, themeName, setTheme, allThemes } = useTheme();
+  const saveReminderTime = async () => {
+    const time = `${selectedHour.toString().padStart(2, '0')}:${selectedMinute.toString().padStart(2, '0')}`;
+    setReminderTime(time);
+    await saveSetting('@reminder_time', time);
+    setTimePickerVisible(false);
     
-    const themeOptions: { key: ThemeName; label: string; icon: string }[] = [
-      { key: 'light', label: 'پیش‌فرض', icon: 'sun' },
-      { key: 'ocean', label: 'اقیانوسی', icon: 'droplet' },
-      { key: 'lavender', label: 'اسطوخودوس', icon: 'flower' },
-      { key: 'sunset', label: 'غروب', icon: 'sunset' },
-      { key: 'forest', label: 'جنگلی', icon: 'tree' },
-    ];
-
-    const handleSelectTheme = (theme: ThemeName) => {
-      setTheme(theme);
-      setThemeModalVisible(false);
-    };
-
-    return (
-      <Modal 
-        visible={themeModalVisible} 
-        transparent 
-        animationType="slide" 
-        onRequestClose={() => setThemeModalVisible(false)}
-      >
-        <View style={[styles.modalOverlay, { backgroundColor: 'rgba(0,0,0,0.5)' }]}>
-          <View style={[styles.modalContent, { backgroundColor: colors.surface }]}>
-            <View style={[styles.modalHandle, { backgroundColor: colors.border }]} />
-            <Text style={[styles.modalTitle, { color: colors.text }]}>🎨 انتخاب تم</Text>
-
-            <View style={styles.themeGrid}>
-              {themeOptions.map((theme) => {
-                const isSelected = themeName === theme.key;
-                const themeColors = allThemes[theme.key];
-                return (
-                  <TouchableOpacity
-                    key={theme.key}
-                    style={[
-                      styles.themeOption,
-                      {
-                        backgroundColor: themeColors.surface,
-                        borderColor: isSelected ? colors.primaryDark : colors.border,
-                        borderWidth: isSelected ? 2 : 1,
-                      },
-                    ]}
-                    onPress={() => handleSelectTheme(theme.key)}
-                  >
-                    <View
-                      style={[
-                        styles.themePreview,
-                        { backgroundColor: themeColors.primary },
-                      ]}
-                    >
-                      <Feather name={theme.icon as any} size={24} color={themeColors.surface} />
-                    </View>
-                    <Text style={[styles.themeLabel, { color: themeColors.text }]}>
-                      {theme.label}
-                    </Text>
-                    <View
-                      style={[
-                        styles.themeColorStrip,
-                        {
-                          backgroundColor: themeColors.border,
-                          borderColor: themeColors.border,
-                        },
-                      ]}
-                    >
-                      <View style={[styles.colorDot, { backgroundColor: themeColors.primary }]} />
-                      <View style={[styles.colorDot, { backgroundColor: themeColors.primaryDark }]} />
-                      <View style={[styles.colorDot, { backgroundColor: themeColors.textMuted }]} />
-                    </View>
-                    {isSelected && (
-                      <View style={styles.checkmark}>
-                        <Feather name="check-circle" size={20} color={colors.primaryDark} />
-                      </View>
-                    )}
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-
-            <TouchableOpacity
-              style={[
-                styles.modalCloseButton,
-                {
-                  backgroundColor: colors.background,
-                  borderColor: colors.border,
-                  borderWidth: 1,
-                },
-              ]}
-              onPress={() => setThemeModalVisible(false)}
-            >
-              <Text style={[styles.modalCloseText, { color: colors.textMuted }]}>بستن</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
+    showAlert(
+      '✅',
+      `ساعت یادآوری به ${time} تنظیم شد.`,
+      'success'
     );
   };
 
+  // ============================================
+  // ۲. تغییر حالت تاریک
+  // ============================================
+  const handleToggleDarkMode = async () => {
+    await toggleDarkMode();
+    showAlert(
+      '✅',
+      isDarkMode ? 'حالت روشن فعال شد.' : 'حالت تاریک فعال شد.',
+      'success'
+    );
+  };
+
+  // ============================================
+  // ۳. تغییر همگام‌سازی با سیستم
+  // ============================================
+  const handleToggleSystemTheme = async (value: boolean) => {
+    await toggleSystemTheme(value);
+    if (value) {
+      showAlert('✅', 'حالت تاریک با سیستم همگام شد.', 'success');
+    } else {
+      showAlert('✅', 'همگام‌سازی با سیستم غیرفعال شد.', 'success');
+    }
+  };
+
+  // ============================================
+  // ۴. گرفتن نام تم برای نمایش
+  // ============================================
+  const getThemeLabel = () => {
+    const baseNames = {
+      light: 'روشن',
+      dark: 'تاریک',
+      ocean: 'اقیانوسی',
+      oceanDark: 'اقیانوسی (دارک)',
+      lavender: 'اسطوخودوس',
+      lavenderDark: 'اسطوخودوس (دارک)',
+      sunset: 'غروب',
+      sunsetDark: 'غروب (دارک)',
+      forest: 'جنگلی',
+      forestDark: 'جنگلی (دارک)',
+    };
+    return baseNames[themeName as keyof typeof baseNames] || 'روشن';
+  };
+
+  // ============================================
+  // ۵. حذف داده‌ها
+  // ============================================
+  const handleClearData = () => {
+    showAlert(
+      '🗑️ حذف تمام داده‌ها',
+      'آیا مطمئن هستید؟ این کار تمام تسک‌ها، دسته‌بندی‌ها و تنظیمات شما را حذف خواهد کرد.',
+      'danger',
+      true,
+      async () => {
+        try {
+          await AsyncStorage.clear();
+          showAlert(
+            '✅',
+            'تمام داده‌ها با موفقیت حذف شدند.',
+            'success'
+          );
+        } catch (error) {
+          showAlert(
+            '❌',
+            'خطا در حذف داده‌ها',
+            'danger'
+          );
+        }
+      }
+    );
+  };
+
+  // ============================================
+  // ۶. اشتراک‌گذاری
+  // ============================================
+  const handleShare = async () => {
+    try {
+      await Share.share({
+        message: '📱 اپلیکیشن کارام - بهترین ابزار مدیریت کارها!\n\nبا کارام، کارهات رو مرتب کن و بهره‌وریت رو افزایش بده.',
+        title: 'اشتراک‌گذاری کارام',
+      });
+    } catch (error) {
+      console.error('خطا در اشتراک‌گذاری:', error);
+    }
+  };
+
+  // ============================================
+  // ۷. ارسال بازخورد به ایمیل
+  // ============================================
+  const handleFeedback = () => {
+    Linking.openURL('mailto:danialmoosavi69@gmail.com?subject=بازخورد کاربران کارام');
+  };
+
+  // ============================================
+  // ۸. امتیاز دادن
+  // ============================================
+  const handleRate = () => {
+    const storeUrl = Platform.select({
+      ios: 'https://apps.apple.com/app/id[YOUR_APP_ID]',
+      android: 'https://play.google.com/store/apps/details?id=com.your.app',
+    });
+    if (storeUrl) {
+      Linking.openURL(storeUrl);
+    }
+  };
+
+  // ============================================
+  // ۹. حریم خصوصی
+  // ============================================
+  const handlePrivacy = () => {
+    showAlert(
+      '🔒 حریم خصوصی',
+      'کارام به حریم خصوصی شما احترام می‌گذارد.\n\n• تمام داده‌ها فقط در دستگاه شما ذخیره می‌شوند\n• هیچ داده‌ای به سرور ارسال نمی‌شود\n• شما مالک کامل داده‌های خود هستید\n\nبرای اطلاعات بیشتر با ما تماس بگیرید.',
+      'success'
+    );
+  };
+
+  // ============================================
+  // ۱۰. درباره برنامه
+  // ============================================
+  const handleAbout = () => {
+    showAlert(
+      'ℹ️ درباره برنامه',
+      'کارام - بهترین ابزار مدیریت کارها\n\nنسخه ۱.۰.۰\nساخته شده با ❤️ توسط تیم کارام',
+      'success'
+    );
+  };
+
+  // ============================================
+  // رندر اصلی
+  // ============================================
   return (
     <ScrollView
       style={[styles.container, { backgroundColor: colors.background }]}
@@ -238,149 +492,162 @@ export default function SettingsScreen() {
         paddingTop: Platform.OS === 'ios' ? 60 : 40,
       }}
     >
+      {/* هدر */}
       <View style={styles.header}>
-        <Text style={[styles.headerTitle, { color: colors.text }]}>تنظیمات</Text>
+        <Text style={[styles.headerTitle, { color: colors.primaryDark }]}>تنظیمات</Text>
         <Text style={[styles.headerSubtitle, { color: colors.textMuted }]}>
           اپلیکیشن رو مطابق سلیقه‌ات تنظیم کن
         </Text>
       </View>
 
-      {/* بخش ظاهر */}
-      <View style={styles.section}>
-        <Text style={[styles.sectionTitle, { color: colors.textMuted }]}>🎨 ظاهر</Text>
-        <View style={[
-          styles.card,
-          {
-            backgroundColor: colors.surface,
-            borderColor: colors.border,
-            borderWidth: 1,
-            shadowColor: '#000',
-          }
-        ]}>
-          <SettingItem
-            icon="palette"
-            title="انتخاب تم رنگی"
-            subtitle={getThemeLabel(themeName)}
-            onPress={() => setThemeModalVisible(true)}
-          />
-          <SettingItem
-            icon="moon"
-            title="حالت تاریک"
-            type="switch"
-            value={darkMode}
-            last={true}
-            onValueChange={(value: boolean) => {
-              setDarkMode(value);
-              saveSetting('@dark_mode_enabled', value);
-            }}
-          />
-        </View>
-      </View>
+      {/* ===== بخش ظاهر ===== */}
+      <SettingsSection title="🎨 ظاهر">
+        <SettingItem
+          icon="moon"
+          title="حالت تاریک"
+          subtitle={isDarkMode ? '🌙 فعال' : '☀️ غیرفعال'}
+          type="switch"
+          value={isDarkMode}
+          onValueChange={handleToggleDarkMode}
+        />
+        <SettingItem
+          icon="monitor"
+          title="همگام‌سازی با سیستم"
+          subtitle={useSystemTheme ? '✅ فعال' : '❌ غیرفعال'}
+          type="switch"
+          value={useSystemTheme}
+          onValueChange={handleToggleSystemTheme}
+        />
+        <SettingItem
+          icon="palette"
+          title="انتخاب تم رنگی"
+          subtitle={getThemeLabel()}
+          onPress={() => setThemeModalVisible(true)}
+          last={true}
+        />
+      </SettingsSection>
 
-      {/* بخش اعلان‌ها */}
-      <View style={styles.section}>
-        <Text style={[styles.sectionTitle, { color: colors.textMuted }]}>🔔 اعلان‌ها</Text>
-        <View style={[
-          styles.card,
-          {
-            backgroundColor: colors.surface,
-            borderColor: colors.border,
-            borderWidth: 1,
-            shadowColor: '#000',
-          }
-        ]}>
-          <SettingItem
-            icon="bell"
-            title="یادآوری تسک‌ها"
-            subtitle="دریافت نوتیفیکیشن برای تسک‌ها"
-            type="switch"
-            last={true}
-            value={notifications}
-            onValueChange={(value: boolean) => {
-              setNotifications(value);
-              saveSetting('@notifications_enabled', value);
-            }}
-          />
-        </View>
-      </View>
+      {/* ===== بخش مدیریت داده ===== */}
+      <SettingsSection title="💾 مدیریت داده">
+        <SettingItem
+          icon="trash-2"
+          title="حذف تمام داده‌ها"
+          danger={true}
+          onPress={handleClearData}
+          last={true}
+        />
+      </SettingsSection>
 
-      {/* بخش پشتیبانی و اطلاعات */}
-      <View style={styles.section}>
-        <Text style={[styles.sectionTitle, { color: colors.textMuted }]}>💡 پشتیبانی و اطلاعات</Text>
-        <View style={[
-          styles.card,
-          {
-            backgroundColor: colors.surface,
-            borderColor: colors.border,
-            borderWidth: 1,
-            shadowColor: '#000',
-          }
-        ]}>
-          <SettingItem
-            icon="shield"
-            title="حریم خصوصی"
-            onPress={() => Alert.alert('🔒 حریم خصوصی', 'تمام داده‌ها فقط در دستگاه شما ذخیره می‌شوند.')}
-          />
-          <SettingItem
-            icon="help-circle"
-            title="سوالات متداول"
-            onPress={() => Alert.alert('📖 سوالات متداول', 'به زودی اضافه می‌شود.')}
-          />
-          <SettingItem
-            icon="info"
-            title="درباره برنامه"
-            subtitle="نسخه ۱.۰.۰"
-            onPress={() => Alert.alert('ℹ️ درباره برنامه', 'کارام - بهترین ابزار مدیریت کارها\n\nساخته شده با ❤️')}
-          />
-          <SettingItem
-            icon="share-2"
-            title="اشتراک‌گذاری"
-            last={true}
-            onPress={() => Alert.alert('📤 اشتراک‌گذاری', 'به زودی اضافه می‌شود.')}
-          />
-        </View>
-      </View>
+      {/* ===== بخش بیشتر ===== */}
+      <SettingsSection title="💡 بیشتر">
+        <SettingItem
+          icon="share-2"
+          title="اشتراک‌گذاری اپ"
+          subtitle="با دوستانت به اشتراک بگذار"
+          onPress={handleShare}
+        />
+        <SettingItem
+          icon="mail"
+          title="ارسال بازخورد"
+          subtitle="نظرات و پیشنهادات"
+          onPress={handleFeedback}
+        />
+        <SettingItem
+          icon="star"
+          title="امتیاز دادن به اپ"
+          subtitle="به ما کمک کن بهتر بشیم"
+          onPress={handleRate}
+          last={true}
+        />
+      </SettingsSection>
 
-      {/* بخش خطرناک */}
-      <View style={[styles.section, { marginTop: 10 }]}>
-        <View style={[
-          styles.card,
-          {
-            backgroundColor: colors.surface,
-            borderColor: colors.border,
-            borderWidth: 1,
-            shadowColor: '#000',
-          }
-        ]}>
-          <SettingItem
-            icon="trash-2"
-            title="حذف تمام داده‌ها"
-            danger={true}
-            last={true}
-            onPress={() => {
-              Alert.alert(
-                '⚠️ هشدار!',
-                'آیا مطمئن هستید که می‌خواهید تمام داده‌ها را حذف کنید؟',
-                [
-                  { text: 'انصراف', style: 'cancel' },
+      {/* ===== بخش درباره ===== */}
+      <SettingsSection title="ℹ️ درباره">
+        <SettingItem
+          icon="info"
+          title="درباره برنامه"
+          subtitle="نسخه ۱.۰.۰"
+          onPress={handleAbout}
+        />
+        <SettingItem
+          icon="shield"
+          title="حریم خصوصی"
+          subtitle="چگونه از داده‌ها محافظت می‌کنیم"
+          onPress={handlePrivacy}
+          last={true}
+        />
+      </SettingsSection>
+
+      {/* ===== مودال انتخاب تم ===== */}
+      <ThemeSelector
+        visible={themeModalVisible}
+        onClose={() => setThemeModalVisible(false)}
+      />
+
+      {/* ===== مودال انتخاب ساعت ===== */}
+      <Modal
+        visible={timePickerVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setTimePickerVisible(false)}
+      >
+        <View style={[styles.modalOverlay, { backgroundColor: 'rgba(0,0,0,0.4)' }]}>
+          <View style={[styles.modalContent, { backgroundColor: colors.surface }]}>
+            <View style={[styles.modalHandle, { backgroundColor: colors.border }]} />
+            <Text style={[styles.modalTitle, { color: colors.text }]}>⏰ انتخاب ساعت یادآوری</Text>
+            
+            <TimePicker
+              selectedHour={selectedHour}
+              selectedMinute={selectedMinute}
+              onHourChange={setSelectedHour}
+              onMinuteChange={setSelectedMinute}
+            />
+
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                style={[
+                  styles.btn,
+                  styles.btnCancel,
                   {
-                    text: 'حذف',
-                    style: 'destructive',
-                    onPress: () => Alert.alert('✅', 'تمام داده‌ها حذف شدند.')
-                  }
-                ]
-              );
-            }}
-          />
+                    backgroundColor: colors.background,
+                    borderColor: colors.border,
+                    borderWidth: 1,
+                  },
+                ]}
+                onPress={() => setTimePickerVisible(false)}
+              >
+                <Text style={[styles.btnCancelText, { color: colors.textMuted }]}>انصراف</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.btn, styles.btnSave, { backgroundColor: colors.primaryDark }]}
+                onPress={saveReminderTime}
+              >
+                <Text style={[styles.btnSaveText, { color: colors.surface }]}>تایید</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
         </View>
-      </View>
+      </Modal>
 
-      {/* مودال انتخاب تم */}
-      <ThemeSelector />
+      {/* ===== CustomAlert ===== */}
+      <CustomAlert
+        visible={alertConfig.visible}
+        type={alertConfig.type}
+        title={alertConfig.title}
+        message={alertConfig.message}
+        showCancel={alertConfig.showCancel}
+        confirmText="تایید"
+        cancelText="انصراف"
+        onConfirm={alertConfig.onConfirm}
+        onCancel={alertConfig.onCancel}
+      />
     </ScrollView>
   );
 }
 
+// ============================================
+// استایل‌ها
+// ============================================
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -395,7 +662,7 @@ const styles = StyleSheet.create({
     textAlign: 'right',
   },
   headerSubtitle: {
-    fontFamily: 'Vazir-Medium',
+    fontFamily: 'Vazir',
     fontSize: 13,
     textAlign: 'right',
     marginTop: 4,
@@ -450,7 +717,7 @@ const styles = StyleSheet.create({
     textAlign: 'right',
   },
   itemSubtitle: {
-    fontFamily: 'Vazir-Medium',
+    fontFamily: 'Vazir',
     fontSize: 12,
     textAlign: 'right',
     marginTop: 2,
@@ -459,7 +726,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  // استایل‌های مودال
+  
+  // استایل‌های مودال انتخاب ساعت
   modalOverlay: {
     flex: 1,
     justifyContent: 'flex-end',
@@ -469,7 +737,7 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 30,
     padding: 24,
     paddingBottom: Platform.OS === 'ios' ? 40 : 24,
-    minHeight: 400,
+    minHeight: 350,
   },
   modalHandle: {
     width: 40,
@@ -480,9 +748,51 @@ const styles = StyleSheet.create({
   },
   modalTitle: {
     fontFamily: 'Vazir-Bold',
-    fontSize: 20,
+    fontSize: 18,
     textAlign: 'center',
     marginBottom: 20,
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 20,
+  },
+  btn: {
+    flex: 1,
+    height: 48,
+    borderRadius: 14,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  btnCancel: {
+    marginRight: 10,
+    borderWidth: 1,
+  },
+  btnCancelText: {
+    fontFamily: 'Vazir-Bold',
+    fontSize: 14,
+  },
+  btnSave: {},
+  btnSaveText: {
+    fontFamily: 'Vazir-Bold',
+    fontSize: 14,
+  },
+  
+  // استایل‌های ThemeSelector
+  darkModeStatus: {
+    alignItems: 'center',
+    marginBottom: 16,
+    padding: 12,
+    borderRadius: 12,
+  },
+  darkModeStatusText: {
+    fontFamily: 'Vazir-Bold',
+    fontSize: 14,
+  },
+  darkModeStatusSub: {
+    fontFamily: 'Vazir',
+    fontSize: 12,
+    marginTop: 2,
   },
   themeGrid: {
     flexDirection: 'row',
@@ -534,6 +844,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderRadius: 14,
     alignItems: 'center',
+    borderWidth: 1,
   },
   modalCloseText: {
     fontFamily: 'Vazir-Bold',
