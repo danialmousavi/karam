@@ -6,6 +6,7 @@ import { Platform } from 'react-native';
 export default function TabLayout() {
   return (
     <Tabs
+      initialRouteName="index" // 🌟 با این خط، صفحه اول همیشه "خانه" خواهد بود
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: colors.primaryDark, 
@@ -13,23 +14,20 @@ export default function TabLayout() {
         tabBarStyle: {
           // جادوی شناور کردن تب‌بار 👇
           position: 'absolute',
-          bottom: Platform.OS === 'ios' ? 28 : 20, // فاصله از پایین صفحه
-          left: 20, // فاصله از چپ
-          right: 20, // فاصله از راست
+          bottom: Platform.OS === 'ios' ? 28 : 20,
+          left: 20,
+          right: 20,
           
-          // گرد کردن و ابعاد
           height: 72,
           borderRadius: 24,
           backgroundColor: colors.surface,
-          borderTopWidth: 0, // حذف خط بالای تب‌بار پیش‌فرض
+          borderTopWidth: 0,
 
-          // تراز کردن آیکون‌ها و متون داخل تب‌بار
           paddingBottom: 12,
           paddingTop: 12,
 
-          // سایه بسیار ملایم پاستیلی برای ایجاد حس معلق بودن
-          elevation: 8, // سایه برای اندروید
-          shadowColor: colors.primaryDark, // سایه برای iOS
+          elevation: 8,
+          shadowColor: colors.primaryDark,
           shadowOffset: { width: 0, height: 8 },
           shadowOpacity: 0.12,
           shadowRadius: 16,
@@ -44,7 +42,7 @@ export default function TabLayout() {
         }
       }}
     >
-     <Tabs.Screen
+      <Tabs.Screen
         name="settings"
         options={{
           title: 'تنظیمات',
@@ -68,8 +66,7 @@ export default function TabLayout() {
         }}
       />
 
- 
-            <Tabs.Screen
+      <Tabs.Screen
         name="index"
         options={{
           title: 'خانه',
