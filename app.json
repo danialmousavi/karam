@@ -11,20 +11,21 @@
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#DDF7E7"
     },
     "ios": {
-      "buildNumber":"1.0.0",
+      "buildNumber": "1.0.0",
       "supportsTablet": true
     },
     "android": {
-      "versionCode":1,
+      "versionCode": 1,
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "backgroundColor": "#DDF7E7"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.daniuf.Karam"
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -34,6 +35,13 @@
       "expo-router",
       "expo-font",
       "@react-native-community/datetimepicker"
-    ]
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "5b76040e-89e6-4943-9baa-67a39fba0a13"
+      }
+    }
   }
 }
+  
