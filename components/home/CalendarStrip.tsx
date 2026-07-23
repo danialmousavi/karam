@@ -14,9 +14,13 @@ export default function CalendarStrip({ selectedDate, onSelectDate, tasks }: Cal
   const { colors } = useTheme();
   const todayString = moment().format('jYYYY/jMM/jDD');
 
+  // متغیرهای بازه تقویم (۱ سال قبل تا ۱ سال بعد)
+  const PAST_DAYS = 365;   
+  const FUTURE_DAYS = 365; 
+
   const calendarDays = useMemo(() => {
     const days = [];
-    for (let i = -7; i <= 30; i++) {
+    for (let i = -PAST_DAYS; i <= FUTURE_DAYS; i++) {
       const date = moment().add(i, 'days');
       days.push({
         fullDate: date.format('jYYYY/jMM/jDD'),
@@ -37,8 +41,18 @@ export default function CalendarStrip({ selectedDate, onSelectDate, tasks }: Cal
         data={calendarDays}
         keyExtractor={(item) => item.fullDate}
         contentContainerStyle={styles.calendarList}
-        initialScrollIndex={7}
+        
+        // ایندکس اسکرول اولیه روی "امروز" تنظیم می‌شود
+        initialScrollIndex={PAST_DAYS} 
         getItemLayout={(data, index) => ({ length: 68, offset: 68 * index, index })}
+        
+        // --- پراپ‌های بهینه‌سازی برای جلوگیری از افت سرعت در لیست‌های بزرگ ---
+        initialNumToRender={7} 
+        maxToRenderPerBatch={10} 
+        windowSize={5} 
+        removeClippedSubviews={true} 
+        // --------------------------------------------------------------------
+
         renderItem={({ item: day }) => {
           const isSelected = selectedDate === day.fullDate;
           const isToday = day.fullDate === todayString;
