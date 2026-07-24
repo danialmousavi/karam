@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import React from 'react';
 import {
   Modal,
   View,
@@ -11,12 +11,10 @@ import {
   StyleSheet,
   Switch,
 } from 'react-native';
-import moment from 'moment-jalaali';
 import { useTheme } from '../../context/ThemeContext';
 import { Category } from '../../services/database';
 import TimePicker from '../TimePicker';
 import CategoryChip from '../home/CategoryChip';
-import DateChip from '../home/DateChip';
 
 interface AddTaskModalProps {
   visible: boolean;
@@ -54,34 +52,6 @@ export default function AddTaskModal({
   onMinuteChange,
 }: AddTaskModalProps) {
   const { colors } = useTheme();
-  const [selectedDates, setSelectedDates] = useState<string[]>([selectedDate]);
-
-  useEffect(() => {
-    setSelectedDates([selectedDate]);
-  }, [selectedDate]);
-
-  const futureDays = useMemo(() => {
-    const days = [];
-    const startDate = moment(selectedDate, 'jYYYY/jMM/jDD');
-    for (let i = 0; i < 31; i++) {
-      const date = startDate.clone().add(i, 'days');
-      days.push({
-        fullDate: date.format('jYYYY/jMM/jDD'),
-        dayNum: date.format('jDD'),
-        dayName: i === 0 ? 'امروز' : date.format('dddd').replace('شنبه', 'ش'),
-        monthName: date.format('jMMMM'),
-      });
-    }
-    return days;
-  }, [selectedDate]);
-
-  const toggleDate = (date: string) => {
-    if (selectedDates.includes(date)) {
-      setSelectedDates(selectedDates.filter((d) => d !== date));
-    } else {
-      setSelectedDates([...selectedDates, date]);
-    }
-  };
 
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
@@ -128,25 +98,6 @@ export default function AddTaskModal({
             />
           </View>
 
-          <Text style={[styles.sectionLabel, { color: colors.text }]}>برای چه روزهایی؟</Text>
-          <View style={styles.horizontalListContainer}>
-            <FlatList
-              horizontal
-              inverted
-              showsHorizontalScrollIndicator={false}
-              data={futureDays}
-              keyExtractor={(item) => item.fullDate}
-              contentContainerStyle={styles.horizontalScrollContent}
-              renderItem={({ item: day }) => (
-                <DateChip
-                  day={day}
-                  isSelected={selectedDates.includes(day.fullDate)}
-                  onSelect={toggleDate}
-                />
-              )}
-            />
-          </View>
-
           <View style={[
             styles.reminderContainer,
             {
@@ -162,7 +113,7 @@ export default function AddTaskModal({
                 trackColor={{ false: colors.border, true: colors.primaryDark }}
                 thumbColor={colors.surface}
               />
-              <Text style={[styles.sectionLabel, { color: colors.text }]}>یادآوری با آلارم 🔔</Text>
+              <Text style={[styles.sectionLabel, { color: colors.text, marginBottom: 0 }]}>یادآوری با آلارم 🔔</Text>
             </View>
 
             {isReminderEnabled && (

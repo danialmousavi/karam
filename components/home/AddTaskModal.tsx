@@ -60,9 +60,9 @@ export default function AddTaskModal({
 }: AddTaskModalProps) {
   const { colors } = useTheme();
 
-  const calendarDays = useMemo(() => {
+const calendarDays = useMemo(() => {
     const days = [];
-    for (let i = -7; i <= 30; i++) {
+    for (let i = -7; i <= 365; i++) {
       const date = moment().add(i, 'days');
       days.push({
         fullDate: date.format('jYYYY/jMM/jDD'),
@@ -80,10 +80,8 @@ export default function AddTaskModal({
         moment(d.fullDate, 'jYYYY/jMM/jDD').isSameOrAfter(
           moment(selectedDate, 'jYYYY/jMM/jDD')
         )
-      )
-      .slice(0, 31);
+      );
   }, [calendarDays, selectedDate]);
-
   const toggleNewTaskDate = (date: string) => {
     if (selectedNewTaskDates.includes(date)) {
       setSelectedNewTaskDates(selectedNewTaskDates.filter((d) => d !== date));
