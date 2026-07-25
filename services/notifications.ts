@@ -5,33 +5,41 @@ import { Platform } from 'react-native';
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
     shouldShowAlert: true,
-    shouldPlaySound: true, // 🌟 اجازه پخش صدا
+    shouldPlaySound: true,
     shouldSetBadge: false,
     shouldShowBanner: true,
     shouldShowList: true,
   }),
 });
 
-// 🌟 تنظیمات کانال اندروید برای اطمینان از پخش صدا و ویبره
+const CHANNEL_ID = 'task_reminders_channel';
+
 export const setupNotificationChannel = async () => {
   if (Platform.OS === 'android') {
-    await Notifications.setNotificationChannelAsync('default', {
+    await Notifications.setNotificationChannelAsync(CHANNEL_ID, {
       name: 'یادآوری کارها',
-      importance: Notifications.AndroidImportance.MAX, // بالاترین اهمیت برای پخش صدا
+      importance: Notifications.AndroidImportance.MAX, // حالا این به درستی اعمال می‌شود
       vibrationPattern: [0, 250, 250, 250],
       lightColor: '#FF231F7C',
-      sound: 'default', // استفاده از صدای پیش‌فرض زنگ گوشی
+      // 🌟 ۲. فیلد sound حذف شد تا اندروید به طور خودکار از صدای دیفالت سیستم استفاده کند
     });
   }
 };
 
 export const requestNotificationPermissions = async () => {
-  await setupNotificationChannel(); // اجرای تنظیمات کانال
+  await setupNotificationChannel();
   const { status: existingStatus } = await Notifications.getPermissionsAsync();
   let finalStatus = existingStatus;
   
   if (existingStatus !== 'granted') {
-    const { status } = await Notifications.requestPermissionsAsync();
+    // 🌟 ۳. درخواست صریح پرمیشن‌های صدا و آلرت برای iOS
+    const { status } = await Notifications.requestPermissionsAsync({
+      ios: {
+        allowAlert: true,
+        allowBadge: true,
+        allowSound: true,
+      },
+    });
     finalStatus = status;
   }
   return finalStatus === 'granted';
@@ -46,11 +54,12 @@ export const scheduleTaskNotification = async (title: string, dateJalaali: strin
         content: {
           title: 'یادآوری کار 🔔',
           body: title,
-          sound: true, // 🌟 دستور پخش صدا
+          sound: true, 
         },
         trigger: {
           type: Notifications.SchedulableTriggerInputTypes.DATE,
           date: taskDateTime,
+          channelId: CHANNEL_ID, // 🌟 ۴. اختصاص نوتیفیکیشن به کانال صداداری که بالاتر ساختیم
         },
       });
       return notificationId;
