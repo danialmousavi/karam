@@ -12,7 +12,7 @@ interface ReminderSectionProps {
   onMinuteChange: (minute: number) => void;
 }
 
-export default function ReminderSection({
+function ReminderSection({
   isEnabled,
   onToggle,
   selectedHour,
@@ -55,20 +55,10 @@ export default function ReminderSection({
   );
 }
 
+export default React.memo(ReminderSection);
+
 const styles = StyleSheet.create({
-  reminderContainer: {
-    marginBottom: 24,
-    padding: 16,
-    borderRadius: 16,
-  },
-  reminderHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  sectionLabel: {
-    fontFamily: 'Vazir-Bold',
-    fontSize: 13,
-    textAlign: 'right',
-  },
+  reminderContainer: { marginBottom: 24, padding: 16, borderRadius: 16 },
+  reminderHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  sectionLabel: { fontFamily: 'Vazir-Bold', fontSize: 13, textAlign: 'right' },
 });

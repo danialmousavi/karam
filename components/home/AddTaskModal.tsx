@@ -60,10 +60,13 @@ export default function AddTaskModal({
 }: AddTaskModalProps) {
   const { colors } = useTheme();
 
-const calendarDays = useMemo(() => {
+  const calendarDays = useMemo(() => {
     const days = [];
-    for (let i = -7; i <= 365; i++) {
-      const date = moment().add(i, 'days');
+    // مهم: فراخوانی moment فقط یکبار انجام شود تا لگ ایجاد نکند
+    const baseDate = moment(); 
+    // تولید تاریخ برای ۷ روز قبل تا ۳۰ روز آینده (۳۶۵ روز برای اسکرول افقی غیرمنطقی و سنگین است)
+    for (let i = -7; i <= 30; i++) {
+      const date = baseDate.clone().add(i, 'days');
       days.push({
         fullDate: date.format('jYYYY/jMM/jDD'),
         dayNum: date.format('jDD'),
@@ -75,13 +78,13 @@ const calendarDays = useMemo(() => {
   }, []);
 
   const modalDays = useMemo(() => {
-    return calendarDays
-      .filter((d) =>
-        moment(d.fullDate, 'jYYYY/jMM/jDD').isSameOrAfter(
-          moment(selectedDate, 'jYYYY/jMM/jDD')
-        )
-      );
+    return calendarDays.filter((d) =>
+      moment(d.fullDate, 'jYYYY/jMM/jDD').isSameOrAfter(
+        moment(selectedDate, 'jYYYY/jMM/jDD')
+      )
+    );
   }, [calendarDays, selectedDate]);
+
   const toggleNewTaskDate = (date: string) => {
     if (selectedNewTaskDates.includes(date)) {
       setSelectedNewTaskDates(selectedNewTaskDates.filter((d) => d !== date));
@@ -124,6 +127,8 @@ const calendarDays = useMemo(() => {
               data={categories}
               keyExtractor={(item) => item.id}
               contentContainerStyle={styles.horizontalScrollContent}
+              removeClippedSubviews={true} // بهینه‌سازی مموری
+              initialNumToRender={5}
               renderItem={({ item: cat }) => (
                 <CategoryChip
                   category={cat}
@@ -149,6 +154,10 @@ const calendarDays = useMemo(() => {
               data={modalDays}
               keyExtractor={(item) => item.fullDate}
               contentContainerStyle={styles.horizontalScrollContent}
+              removeClippedSubviews={true} // بهینه‌سازی مموری
+              initialNumToRender={7}
+              maxToRenderPerBatch={7}
+              windowSize={5}
               renderItem={({ item: day }) => (
                 <DateChip
                   day={day}
@@ -159,6 +168,7 @@ const calendarDays = useMemo(() => {
             />
           </View>
 
+          {/* کامپوننت ریمایندر بهینه شده */}
           <ReminderSection
             isEnabled={isReminderEnabled}
             onToggle={setIsReminderEnabled}
@@ -173,11 +183,7 @@ const calendarDays = useMemo(() => {
               style={[
                 styles.btn,
                 styles.btnCancel,
-                {
-                  backgroundColor: colors.background,
-                  borderColor: colors.border,
-                  borderWidth: 1,
-                },
+                { backgroundColor: colors.background, borderColor: colors.border, borderWidth: 1 },
               ]}
               onPress={onClose}
             >
@@ -197,76 +203,20 @@ const calendarDays = useMemo(() => {
 }
 
 const styles = StyleSheet.create({
-  modalOverlay: {
-    flex: 1,
-    justifyContent: 'flex-end',
-  },
-  modalContent: {
-    borderTopLeftRadius: 30,
-    borderTopRightRadius: 30,
-    padding: 24,
-    minHeight: 480,
-  },
-  modalDragHandle: {
-    width: 40,
-    height: 5,
-    borderRadius: 3,
-    alignSelf: 'center',
-    marginBottom: 20,
-  },
-  modalTitle: {
-    fontFamily: 'Vazir-Bold',
-    fontSize: 18,
-    textAlign: 'right',
-    marginBottom: 20,
-  },
-  input: {
-    borderRadius: 14,
-    padding: 16,
-    fontFamily: 'Vazir-Bold',
-    fontSize: 15,
-    textAlign: 'right',
-    marginBottom: 20,
-    borderWidth: 1,
-  },
-  dateSelectionHeader: {
-    flexDirection: 'row-reverse',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  selectAllText: {
-    fontFamily: 'Vazir-Bold',
-    fontSize: 12,
-  },
+  modalOverlay: { flex: 1, justifyContent: 'flex-end' },
+  modalContent: { borderTopLeftRadius: 30, borderTopRightRadius: 30, padding: 24, minHeight: 480 },
+  modalDragHandle: { width: 40, height: 5, borderRadius: 3, alignSelf: 'center', marginBottom: 20 },
+  modalTitle: { fontFamily: 'Vazir-Bold', fontSize: 18, textAlign: 'right', marginBottom: 20 },
+  input: { borderRadius: 14, padding: 16, fontFamily: 'Vazir-Bold', fontSize: 15, textAlign: 'right', marginBottom: 20, borderWidth: 1 },
+  dateSelectionHeader: { flexDirection: 'row-reverse', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
+  selectAllText: { fontFamily: 'Vazir-Bold', fontSize: 12 },
   horizontalListContainer: { marginBottom: 24 },
   horizontalScrollContent: { alignItems: 'center', paddingHorizontal: 4 },
-  sectionLabel: {
-    fontFamily: 'Vazir-Bold',
-    fontSize: 13,
-    textAlign: 'right',
-  },
-  modalButtons: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  btn: {
-    flex: 1,
-    height: 52,
-    borderRadius: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  btnCancel: {
-    marginRight: 10,
-  },
-  btnCancelText: {
-    fontFamily: 'Vazir-Bold',
-    fontSize: 14,
-  },
+  sectionLabel: { fontFamily: 'Vazir-Bold', fontSize: 13, textAlign: 'right' },
+  modalButtons: { flexDirection: 'row', justifyContent: 'space-between' },
+  btn: { flex: 1, height: 52, borderRadius: 16, justifyContent: 'center', alignItems: 'center' },
+  btnCancel: { marginRight: 10 },
+  btnCancelText: { fontFamily: 'Vazir-Bold', fontSize: 14 },
   btnSave: {},
-  btnSaveText: {
-    fontFamily: 'Vazir-Bold',
-    fontSize: 14,
-  },
+  btnSaveText: { fontFamily: 'Vazir-Bold', fontSize: 14 },
 });

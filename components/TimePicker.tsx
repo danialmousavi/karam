@@ -1,30 +1,30 @@
-// components/TimePicker.tsx
-import React, { useRef, useEffect } from 'react';
+import React, { useRef } from 'react';
 import { 
   View, 
-  Text, 
   StyleSheet, 
-  FlatList, 
   NativeSyntheticEvent, 
   NativeScrollEvent,
-  TouchableOpacity
+  TouchableOpacity,
+  Animated,
 } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
 
 const ITEM_HEIGHT = 50; 
 const VISIBLE_ITEMS = 3; 
 
-// 🌟 تکرار لیست برای ایجاد افکت چرخشی بی‌نهایت
-const REPEATS = 200;
-const MIDDLE_CYCLE = Math.floor(REPEATS / 2);
+// تعداد تکرار رو آوردیم پایین تا رم گوشی اصلاً درگیر نشه
+const CYCLES = 5; 
+const MIDDLE_CYCLE = Math.floor(CYCLES / 2);
 
-// آرایه پایه
 const baseHours = Array.from({ length: 24 }, (_, i) => i);
 const baseMinutes = Array.from({ length: 60 }, (_, i) => i);
 
-// ساخت آرایه بی‌نهایت به همراه فضاهای خالی در ابتدا و انتها
-const hours = ['', ...Array(REPEATS).fill(baseHours).flat(), ''];
-const minutes = ['', ...Array(REPEATS).fill(baseMinutes).flat(), ''];
+// تریک طلایی: به جای padding، دو تا آیتم 1- به اول و آخر اضافه کردیم تا تراز دقیق بشه
+const hours = [-1, ...Array(CYCLES).fill(baseHours).flat(), -1];
+const minutes = [-1, ...Array(CYCLES).fill(baseMinutes).flat(), -1];
+
+const snapOffsetsHours = hours.map((_, i) => i * ITEM_HEIGHT);
+const snapOffsetsMinutes = minutes.map((_, i) => i * ITEM_HEIGHT);
 
 interface TimePickerProps {
   selectedHour: number;
@@ -33,48 +33,43 @@ interface TimePickerProps {
   onMinuteChange: (minute: number) => void;
 }
 
-export default function TimePicker({ 
+function TimePicker({ 
   selectedHour, 
   selectedMinute, 
   onHourChange, 
   onMinuteChange 
 }: TimePickerProps) {
   const { colors } = useTheme();
-  const hourListRef = useRef<FlatList>(null);
-  const minuteListRef = useRef<FlatList>(null);
+  
+  const hourListRef = useRef<any>(null);
+  const minuteListRef = useRef<any>(null);
 
-  // اسکرول کردن به زمان انتخاب شده در "وسط" لیست بزرگ
-  useEffect(() => {
-    setTimeout(() => {
-      const initialHourOffset = (MIDDLE_CYCLE * 24 + selectedHour) * ITEM_HEIGHT;
-      const initialMinuteOffset = (MIDDLE_CYCLE * 60 + selectedMinute) * ITEM_HEIGHT;
-      
-      hourListRef.current?.scrollToOffset({ offset: initialHourOffset, animated: false });
-      minuteListRef.current?.scrollToOffset({ offset: initialMinuteOffset, animated: false });
-    }, 100);
-  }, []);
+  const scrollYHour = useRef(new Animated.Value(0)).current;
+  const scrollYMinute = useRef(new Animated.Value(0)).current;
 
-  // هندل کردن زمان توقف اسکرول و آپدیت استیت
-  const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>, type: 'hour' | 'minute') => {
+  // محاسبه دقیق ایندکس برای لود اولیه
+  const initialHourIndex = (MIDDLE_CYCLE * 24) + selectedHour;
+  const initialMinuteIndex = (MIDDLE_CYCLE * 60) + selectedMinute;
+
+  // پیدا کردن عدد وسط موقعی که اسکرول متوقف میشه
+  const handleScrollEnd = (event: NativeSyntheticEvent<NativeScrollEvent>, type: 'hour' | 'minute') => {
     const offsetY = event.nativeEvent.contentOffset.y;
-    const topIndex = Math.round(offsetY / ITEM_HEIGHT);
-    const centerIndex = topIndex + 1;
+    const index = Math.round(offsetY / ITEM_HEIGHT) + 1;
     
     if (type === 'hour') {
-      const value = hours[centerIndex];
-      if (typeof value === 'number') onHourChange(value);
+      const value = hours[index];
+      if (value !== -1 && value !== undefined) onHourChange(value);
     } else {
-      const value = minutes[centerIndex];
-      if (typeof value === 'number') onMinuteChange(value);
+      const value = minutes[index];
+      if (value !== -1 && value !== undefined) onMinuteChange(value);
     }
   };
 
-  // هندل کردن لمس (Tap) روی اعداد
-  const handleItemPress = (absoluteIndex: number, value: number | string, type: 'hour' | 'minute') => {
-    if (typeof value !== 'number') return;
-
-    const targetOffset = (absoluteIndex - 1) * ITEM_HEIGHT;
-
+  // کلیک روی اعداد برای اسکرول به اون عدد
+  const handleItemPress = (index: number, value: number, type: 'hour' | 'minute') => {
+    if (value === -1) return;
+    const targetOffset = (index - 1) * ITEM_HEIGHT;
+    
     if (type === 'hour') {
       onHourChange(value);
       hourListRef.current?.scrollToOffset({ offset: targetOffset, animated: true });
@@ -84,77 +79,80 @@ export default function TimePicker({
     }
   };
 
-  // رندر کردن هر آیتم
-  const renderItem = ({ item, index }: { item: number | string, index: number }, currentValue: number, type: 'hour' | 'minute') => {
-    const isSelected = item === currentValue;
-    const isEmpty = item === '';
+  const renderItem = ({ item, index }: { item: number, index: number }, type: 'hour' | 'minute') => {
+    // رندر آیتم‌های خالی به عنوان پرکننده برای تراز شدن
+    if (item === -1) return <View style={styles.item} />;
+    
+    const scrollY = type === 'hour' ? scrollYHour : scrollYMinute;
+    const inputRange = [(index - 2) * ITEM_HEIGHT, (index - 1) * ITEM_HEIGHT, index * ITEM_HEIGHT];
+
+    const scale = scrollY.interpolate({ inputRange, outputRange: [0.75, 1.15, 0.75], extrapolate: 'clamp' });
+    const opacity = scrollY.interpolate({ inputRange, outputRange: [0.3, 1, 0.3], extrapolate: 'clamp' });
 
     return (
       <TouchableOpacity 
         style={styles.item}
-        activeOpacity={0.7}
+        activeOpacity={0.8}
         onPress={() => handleItemPress(index, item, type)}
-        disabled={isEmpty} 
       >
-        {!isEmpty && (
-          <Text style={[
-            styles.itemText, 
-            { color: colors.textMuted },
-            isSelected && { color: colors.primaryDark, fontFamily: 'Vazir-Bold', fontSize: 28 }
-          ]}>
-            {item.toString().padStart(2, '0')}
-          </Text>
-        )}
+        <Animated.Text style={[
+          styles.itemText, 
+          { color: colors.primaryDark, opacity, transform: [{ scale }] }
+        ]}>
+          {item.toString().padStart(2, '0')}
+        </Animated.Text>
       </TouchableOpacity>
     );
   };
 
   return (
-    <View style={[
-      styles.container,
-      {
-        backgroundColor: colors.surface,
-        borderColor: colors.border,
-      }
-    ]}>
+    <View style={[styles.container, { backgroundColor: colors.surface, borderColor: colors.border }]}>
       <View style={[styles.highlightBand, { backgroundColor: colors.background }]} pointerEvents="none" />
       
       <View style={styles.pickerWrapper}>
         {/* لیست ساعت‌ها */}
         <View style={styles.listContainer}>
-          <FlatList
+          <Animated.FlatList
             ref={hourListRef}
             data={hours}
             keyExtractor={(_, index) => `h-${index}`}
-            renderItem={(props) => renderItem(props, selectedHour, 'hour')}
+            renderItem={(props) => renderItem(props, 'hour')}
             showsVerticalScrollIndicator={false}
-            snapToInterval={ITEM_HEIGHT}
+            snapToOffsets={snapOffsetsHours} // قفل شدن دقیق پیکسل به پیکسل
             decelerationRate="fast"
-            onMomentumScrollEnd={(e) => handleScroll(e, 'hour')}
-            onScrollEndDrag={(e) => {
-              if (e.nativeEvent.velocity && Math.abs(e.nativeEvent.velocity.y) < 0.1) handleScroll(e, 'hour');
-            }}
+            initialScrollIndex={initialHourIndex}
             getItemLayout={(_, index) => ({ length: ITEM_HEIGHT, offset: ITEM_HEIGHT * index, index })}
+            // پروپ‌های بهینه‌سازی پرفورمنس برای رفع کامل لگ
+            windowSize={3}
+            maxToRenderPerBatch={5}
+            initialNumToRender={5}
+            removeClippedSubviews={true}
+            onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollYHour } } }], { useNativeDriver: true })}
+            onMomentumScrollEnd={(e) => handleScrollEnd(e, 'hour')}
           />
         </View>
 
-        <Text style={[styles.colon, { color: colors.primaryDark }]}>:</Text>
+        <Animated.Text style={[styles.colon, { color: colors.primaryDark }]}>:</Animated.Text>
 
         {/* لیست دقیقه‌ها */}
         <View style={styles.listContainer}>
-          <FlatList
+          <Animated.FlatList
             ref={minuteListRef}
             data={minutes}
             keyExtractor={(_, index) => `m-${index}`}
-            renderItem={(props) => renderItem(props, selectedMinute, 'minute')}
+            renderItem={(props) => renderItem(props, 'minute')}
             showsVerticalScrollIndicator={false}
-            snapToInterval={ITEM_HEIGHT}
+            snapToOffsets={snapOffsetsMinutes}
             decelerationRate="fast"
-            onMomentumScrollEnd={(e) => handleScroll(e, 'minute')}
-            onScrollEndDrag={(e) => {
-              if (e.nativeEvent.velocity && Math.abs(e.nativeEvent.velocity.y) < 0.1) handleScroll(e, 'minute');
-            }}
+            initialScrollIndex={initialMinuteIndex}
             getItemLayout={(_, index) => ({ length: ITEM_HEIGHT, offset: ITEM_HEIGHT * index, index })}
+            // پروپ‌های بهینه‌سازی پرفورمنس برای رفع کامل لگ
+            windowSize={3}
+            maxToRenderPerBatch={5}
+            initialNumToRender={5}
+            removeClippedSubviews={true}
+            onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollYMinute } } }], { useNativeDriver: true })}
+            onMomentumScrollEnd={(e) => handleScrollEnd(e, 'minute')}
           />
         </View>
       </View>
@@ -162,47 +160,27 @@ export default function TimePicker({
   );
 }
 
+// React.memo باعث میشه فقط در صورت تغییر پروپ‌ها رندر بشه و کیبورد لگ نگیره
+export default React.memo(TimePicker);
+
 const styles = StyleSheet.create({
-  container: {
-    height: ITEM_HEIGHT * VISIBLE_ITEMS,
-    borderRadius: 16,
-    borderWidth: 1,
-    overflow: 'hidden',
-    justifyContent: 'center',
-    marginTop: 16,
+  container: { height: ITEM_HEIGHT * VISIBLE_ITEMS, borderRadius: 16, borderWidth: 1, overflow: 'hidden', justifyContent: 'center', marginTop: 16 },
+  highlightBand: { position: 'absolute', top: ITEM_HEIGHT, left: 12, right: 12, height: ITEM_HEIGHT, borderRadius: 12 },
+  pickerWrapper: { flexDirection: 'row', direction: 'ltr', justifyContent: 'center', alignItems: 'center' },
+  listContainer: { height: ITEM_HEIGHT * VISIBLE_ITEMS, width: 70 },
+  item: { height: ITEM_HEIGHT, justifyContent: 'center', alignItems: 'center', width: '100%' },
+  itemText: { 
+    fontFamily: 'Vazir-Bold', 
+    fontSize: 26, 
+    textAlignVertical: 'center', // تراز عمودی دقیق در اندروید
+    includeFontPadding: false // حذف پدینگ اضافی فونت در اندروید
   },
-  highlightBand: {
-    position: 'absolute',
-    top: ITEM_HEIGHT, 
-    left: 12,
-    right: 12,
-    height: ITEM_HEIGHT,
-    borderRadius: 12,
-  },
-  pickerWrapper: {
-    flexDirection: 'row', 
-    direction: 'ltr', 
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  listContainer: {
-    height: ITEM_HEIGHT * VISIBLE_ITEMS,
-    width: 70,
-  },
-  item: {
-    height: ITEM_HEIGHT,
-    justifyContent: 'center',
-    alignItems: 'center',
-    width: '100%',
-  },
-  itemText: {
-    fontFamily: 'Vazir',
-    fontSize: 22,
-  },
-  colon: {
-    fontFamily: 'Vazir-Bold',
-    fontSize: 28,
-    marginHorizontal: 15,
-    marginBottom: 5,
+  colon: { 
+    fontFamily: 'Vazir-Bold', 
+    fontSize: 32, 
+    marginHorizontal: 15, 
+    marginBottom: 4, 
+    textAlignVertical: 'center', 
+    includeFontPadding: false 
   },
 });
