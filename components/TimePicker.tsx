@@ -12,14 +12,12 @@ import { useTheme } from '../context/ThemeContext';
 const ITEM_HEIGHT = 50; 
 const VISIBLE_ITEMS = 3; 
 
-// تعداد تکرار رو آوردیم پایین تا رم گوشی اصلاً درگیر نشه
 const CYCLES = 5; 
 const MIDDLE_CYCLE = Math.floor(CYCLES / 2);
 
 const baseHours = Array.from({ length: 24 }, (_, i) => i);
 const baseMinutes = Array.from({ length: 60 }, (_, i) => i);
 
-// تریک طلایی: به جای padding، دو تا آیتم 1- به اول و آخر اضافه کردیم تا تراز دقیق بشه
 const hours = [-1, ...Array(CYCLES).fill(baseHours).flat(), -1];
 const minutes = [-1, ...Array(CYCLES).fill(baseMinutes).flat(), -1];
 
@@ -160,7 +158,6 @@ function TimePicker({
   );
 }
 
-// React.memo باعث میشه فقط در صورت تغییر پروپ‌ها رندر بشه و کیبورد لگ نگیره
 export default React.memo(TimePicker);
 
 const styles = StyleSheet.create({
@@ -172,8 +169,8 @@ const styles = StyleSheet.create({
   itemText: { 
     fontFamily: 'Vazir-Bold', 
     fontSize: 26, 
-    textAlignVertical: 'center', // تراز عمودی دقیق در اندروید
-    includeFontPadding: false // حذف پدینگ اضافی فونت در اندروید
+    textAlignVertical: 'center', 
+    includeFontPadding: false 
   },
   colon: { 
     fontFamily: 'Vazir-Bold', 

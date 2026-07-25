@@ -62,9 +62,7 @@ export default function AddTaskModal({
 
   const calendarDays = useMemo(() => {
     const days = [];
-    // مهم: فراخوانی moment فقط یکبار انجام شود تا لگ ایجاد نکند
     const baseDate = moment(); 
-    // تولید تاریخ برای ۷ روز قبل تا ۳۰ روز آینده (۳۶۵ روز برای اسکرول افقی غیرمنطقی و سنگین است)
     for (let i = -7; i <= 30; i++) {
       const date = baseDate.clone().add(i, 'days');
       days.push({
