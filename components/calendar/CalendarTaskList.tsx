@@ -1,10 +1,11 @@
-// components/calendar/CalendarTaskList.tsx
 import React from 'react';
 import { View, Text, FlatList, StyleSheet } from 'react-native';
 import { useTheme } from '../../context/ThemeContext';
 import { Task, Category } from '../../services/database';
 import EmptyState from '../home/EmptyState';
 import TaskCard from '../home/TaskCard';
+// ۱. ایمپورت کردن هوک
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 interface CalendarTaskListProps {
   tasks: Task[];
@@ -24,6 +25,8 @@ export default function CalendarTaskList({
   getCategoryDetails,
 }: CalendarTaskListProps) {
   const { colors } = useTheme();
+  // ۲. گرفتن فواصل سیستم
+  const insets = useSafeAreaInsets();
   const todayStr = new Date().toISOString().split('T')[0];
 
   if (tasks.length === 0) {
@@ -41,7 +44,11 @@ export default function CalendarTaskList({
       <FlatList
         data={tasks}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.listContainer}
+        // ۳. داینامیک کردن فاصله پایین تا از دکمه شناور هم عبور کنه
+        contentContainerStyle={[
+          styles.listContainer,
+          { paddingBottom: insets.bottom + 180 }
+        ]}
         showsVerticalScrollIndicator={false}
         renderItem={({ item }) => {
           const category = getCategoryDetails(item.categoryId);
@@ -67,5 +74,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     textAlign: 'right',
   },
-  listContainer: { paddingHorizontal: 20, paddingBottom: 130 },
+  // ۴. مقدار ثابت paddingBottom رو از اینجا حذف کردم
+  listContainer: { paddingHorizontal: 20 },
 });

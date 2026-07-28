@@ -1,4 +1,3 @@
-// app/(tabs)/categories.tsx
 import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, Platform } from 'react-native';
 import { useIsFocused } from '@react-navigation/native';

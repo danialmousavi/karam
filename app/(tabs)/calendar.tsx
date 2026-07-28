@@ -1,4 +1,3 @@
-// app/(tabs)/calendar.tsx
 import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, Platform, SafeAreaView, StatusBar } from 'react-native';
 import moment from 'moment-jalaali';
@@ -155,13 +154,17 @@ export default function CalendarScreen() {
       <View style={styles.contentWrapper}>
         <CalendarHeader onGoToToday={goToToday} />
 
-        <View style={[
+<View style={[
           styles.calendarCard,
           {
             backgroundColor: colors.surface,
             borderColor: colors.border,
             shadowColor: '#000',
-          }
+            // --- تغییرات جدید برای باز شدن فضا ---
+            transform: [{ scale: 0.92 }], // تقویم رو حدود ۸ درصد کوچیک‌تر می‌کنه
+            marginTop: 0, // فضای خالی بالای تقویم رو می‌گیره
+            marginBottom: -25, // لیست تسک‌ها رو ۲۵ پیکسل می‌کشه سمت بالا
+          },
         ]}>
           <MonthNavigator
             currentMonth={monthView}
@@ -176,7 +179,6 @@ export default function CalendarScreen() {
             allTasks={allTasks}
           />
         </View>
-
         <CalendarTaskList
           tasks={tasks}
           categories={categories}

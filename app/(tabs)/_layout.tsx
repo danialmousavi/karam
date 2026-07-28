@@ -1,22 +1,25 @@
-// app/(tabs)/_layout.tsx
 import { Tabs } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { Platform } from 'react-native';
 import { useTheme } from '../../context/ThemeContext';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function TabLayout() {
   const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
+
+  const bottomMargin = insets.bottom > 0 ? insets.bottom : (Platform.OS === 'ios' ? 28 : 20);
 
   return (
     <Tabs
-    initialRouteName="index"
+      initialRouteName="index"
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: colors.primaryDark,
         tabBarInactiveTintColor: colors.textMuted,
         tabBarStyle: {
           position: 'absolute',
-          bottom: Platform.OS === 'ios' ? 28 : 20,
+          bottom: bottomMargin + 15, 
           left: 20,
           right: 20,
           height: 72,
@@ -41,7 +44,6 @@ export default function TabLayout() {
         },
       }}
     >
-      {/* تنظیمات (چپ‌ترین) */}
       <Tabs.Screen
         name="settings"
         options={{
@@ -50,7 +52,6 @@ export default function TabLayout() {
         }}
       />
 
-      {/* تقویم */}
       <Tabs.Screen
         name="calendar"
         options={{
@@ -59,7 +60,6 @@ export default function TabLayout() {
         }}
       />
 
-      {/* دسته‌ها */}
       <Tabs.Screen
         name="categories"
         options={{
@@ -68,7 +68,6 @@ export default function TabLayout() {
         }}
       />
 
-      {/* خانه (راست‌ترین) */}
       <Tabs.Screen
         name="index"
         options={{
