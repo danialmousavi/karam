@@ -10,9 +10,10 @@ import { StatusBar } from 'expo-status-bar';
 import { db } from '../db/index';
 import migrations from '../drizzle/migrations';
 import { ThemeProvider, useTheme } from '../context/ThemeContext';
-
+import { I18nManager } from 'react-native';
 SplashScreen.preventAutoHideAsync();
-
+I18nManager.allowRTL(false);
+I18nManager.forceRTL(false);
 // کامپوننت داخلی برای مدیریت StatusBar (روش دوم)
 function StatusBarManager() {
   const { colors, isDarkMode } = useTheme();
