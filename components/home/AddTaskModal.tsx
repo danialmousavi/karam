@@ -9,12 +9,11 @@ import {
   KeyboardAvoidingView,
   Platform,
   StyleSheet,
-  ScrollView, // اضافه شد
 } from 'react-native';
 import moment from 'moment-jalaali';
 import { useTheme } from '../../context/ThemeContext';
 import { Category } from '../../services/database';
-import { useSafeAreaInsets } from 'react-native-safe-area-context'; // اضافه شد
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import CategoryChip from './CategoryChip';
 import DateChip from './DateChip';
 import ReminderSection from './ReminderSection';
@@ -61,7 +60,7 @@ export default function AddTaskModal({
   onSelectAllWeek,
 }: AddTaskModalProps) {
   const { colors } = useTheme();
-  const insets = useSafeAreaInsets(); // گرفتن فواصل امن گوشی
+  const insets = useSafeAreaInsets();
 
   const calendarDays = useMemo(() => {
     const days = [];
@@ -96,130 +95,119 @@ export default function AddTaskModal({
 
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
-      {/* لایه اول: فقط مخصوص مدیریت فضای کیبورد */}
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        {/* لایه دوم: پس‌زمینه تاریک */}
         <View style={[styles.modalOverlay, { backgroundColor: 'rgba(0,0,0,0.4)' }]}>
           
-          {/* لایه سوم: باکس اصلی مودال */}
           <View 
             style={[
               styles.modalContent, 
               { 
                 backgroundColor: colors.surface,
-                paddingBottom: insets.bottom > 0 ? insets.bottom + 16 : 24, // فاصله امن پایین
-                maxHeight: '90%', // جلوگیری از رفتن به زیر استاتوس‌بار
+                paddingBottom: insets.bottom > 0 ? insets.bottom + 16 : 32, // فاصله امن پایین
               }
             ]}
           >
-            {/* خط درگ بالای مودال */}
             <View style={[styles.modalDragHandle, { backgroundColor: colors.border }]} />
 
-            {/* اسکرول ویو برای زمان باز بودن کیبورد */}
-            <ScrollView
-              style={{ flexShrink: 1 }} 
-              contentContainerStyle={{ paddingBottom: 20 }}
-              showsVerticalScrollIndicator={false}
-              keyboardShouldPersistTaps="handled" // مهم برای کلیک روی دکمه‌ها بدون نیاز به بستن کیبورد
-            >
-              <Text style={[styles.modalTitle, { color: colors.primaryDark }]}>ثبت کار جدید ✨</Text>
+            <Text style={[styles.modalTitle, { color: colors.primaryDark }]}>ثبت کار جدید ✨</Text>
 
-              <TextInput
+            <TextInput
+              style={[
+                styles.input,
+                {
+                  backgroundColor: colors.background,
+                  borderColor: colors.border,
+                  color: colors.text,
+                },
+              ]}
+              placeholder="می‌خوای چیکار کنی؟..."
+              placeholderTextColor={colors.textMuted}
+              value={newTaskTitle}
+              onChangeText={setNewTaskTitle}
+            />
+
+            <Text style={[styles.sectionLabel, { color: colors.text }]}>دسته‌بندی رو انتخاب کن:</Text>
+            <View style={styles.horizontalListContainer}>
+              <FlatList
+                horizontal
+                inverted
+                showsHorizontalScrollIndicator={false}
+                data={categories}
+                keyExtractor={(item) => item.id}
+                contentContainerStyle={styles.horizontalScrollContent}
+                removeClippedSubviews={true}
+                initialNumToRender={5}
+                keyboardShouldPersistTaps="handled"
+                renderItem={({ item: cat }) => (
+                  <CategoryChip
+                    category={cat}
+                    isSelected={selectedCategoryId === cat.id}
+                    onSelect={setSelectedCategoryId}
+                  />
+                )}
+              />
+            </View>
+
+            <View style={styles.dateSelectionHeader}>
+              <Text style={[styles.sectionLabel, { color: colors.text }]}>برای چه روزهایی؟</Text>
+              <TouchableOpacity onPress={onSelectAllWeek}>
+                <Text style={[styles.selectAllText, { color: colors.primaryDark }]}>+ تا آخر هفته (جمعه)</Text>
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.horizontalListContainer}>
+              <FlatList
+                horizontal
+                inverted
+                showsHorizontalScrollIndicator={false}
+                data={modalDays}
+                keyExtractor={(item) => item.fullDate}
+                contentContainerStyle={styles.horizontalScrollContent}
+                removeClippedSubviews={true}
+                initialNumToRender={7}
+                maxToRenderPerBatch={7}
+                windowSize={5}
+                keyboardShouldPersistTaps="handled"
+                renderItem={({ item: day }) => (
+                  <DateChip
+                    day={day}
+                    isSelected={selectedNewTaskDates.includes(day.fullDate)}
+                    onSelect={toggleNewTaskDate}
+                  />
+                )}
+              />
+            </View>
+
+            <ReminderSection
+              isEnabled={isReminderEnabled}
+              onToggle={setIsReminderEnabled}
+              selectedHour={selectedHour}
+              selectedMinute={selectedMinute}
+              onHourChange={onHourChange}
+              onMinuteChange={onMinuteChange}
+            />
+
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
                 style={[
-                  styles.input,
-                  {
-                    backgroundColor: colors.background,
-                    borderColor: colors.border,
-                    color: colors.text,
-                  },
+                  styles.btn,
+                  styles.btnCancel,
+                  { backgroundColor: colors.background, borderColor: colors.border, borderWidth: 1 },
                 ]}
-                placeholder="می‌خوای چیکار کنی؟..."
-                placeholderTextColor={colors.textMuted}
-                value={newTaskTitle}
-                onChangeText={setNewTaskTitle}
-              />
-
-              <Text style={[styles.sectionLabel, { color: colors.text }]}>دسته‌بندی رو انتخاب کن:</Text>
-              <View style={styles.horizontalListContainer}>
-                <FlatList
-                  horizontal
-                  inverted
-                  showsHorizontalScrollIndicator={false}
-                  data={categories}
-                  keyExtractor={(item) => item.id}
-                  contentContainerStyle={styles.horizontalScrollContent}
-                  removeClippedSubviews={true}
-                  initialNumToRender={5}
-                  renderItem={({ item: cat }) => (
-                    <CategoryChip
-                      category={cat}
-                      isSelected={selectedCategoryId === cat.id}
-                      onSelect={setSelectedCategoryId}
-                    />
-                  )}
-                />
-              </View>
-
-              <View style={styles.dateSelectionHeader}>
-                <Text style={[styles.sectionLabel, { color: colors.text }]}>برای چه روزهایی؟</Text>
-                <TouchableOpacity onPress={onSelectAllWeek}>
-                  <Text style={[styles.selectAllText, { color: colors.primaryDark }]}>+ تا آخر هفته (جمعه)</Text>
-                </TouchableOpacity>
-              </View>
-
-              <View style={styles.horizontalListContainer}>
-                <FlatList
-                  horizontal
-                  inverted
-                  showsHorizontalScrollIndicator={false}
-                  data={modalDays}
-                  keyExtractor={(item) => item.fullDate}
-                  contentContainerStyle={styles.horizontalScrollContent}
-                  removeClippedSubviews={true}
-                  initialNumToRender={7}
-                  maxToRenderPerBatch={7}
-                  windowSize={5}
-                  renderItem={({ item: day }) => (
-                    <DateChip
-                      day={day}
-                      isSelected={selectedNewTaskDates.includes(day.fullDate)}
-                      onSelect={toggleNewTaskDate}
-                    />
-                  )}
-                />
-              </View>
-
-              <ReminderSection
-                isEnabled={isReminderEnabled}
-                onToggle={setIsReminderEnabled}
-                selectedHour={selectedHour}
-                selectedMinute={selectedMinute}
-                onHourChange={onHourChange}
-                onMinuteChange={onMinuteChange}
-              />
-
-              <View style={styles.modalButtons}>
-                <TouchableOpacity
-                  style={[
-                    styles.btn,
-                    styles.btnCancel,
-                    { backgroundColor: colors.background, borderColor: colors.border, borderWidth: 1 },
-                  ]}
-                  onPress={onClose}
-                >
-                  <Text style={[styles.btnCancelText, { color: colors.textMuted }]}>انصراف</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.btn, styles.btnSave, { backgroundColor: colors.primaryDark }]}
-                  onPress={onSave}
-                >
-                  <Text style={[styles.btnSaveText, { color: colors.surface }]}>ثبت کار</Text>
-                </TouchableOpacity>
-              </View>
-            </ScrollView>
+                onPress={onClose}
+              >
+                <Text style={[styles.btnCancelText, { color: colors.textMuted }]}>انصراف</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.btn, styles.btnSave, { backgroundColor: colors.primaryDark }]}
+                onPress={onSave}
+              >
+                <Text style={[styles.btnSaveText, { color: colors.surface }]}>ثبت کار</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
       </KeyboardAvoidingView>
@@ -237,7 +225,6 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 30, 
     paddingHorizontal: 24, 
     paddingTop: 10,
-    // minHeight: 480 حذف شد تا با کیبورد تداخل نداشته باشه
   },
   modalDragHandle: { 
     width: 40, 
@@ -286,7 +273,7 @@ const styles = StyleSheet.create({
   modalButtons: { 
     flexDirection: 'row', 
     justifyContent: 'space-between',
-    marginTop: 10 // فاصله دادن دکمه‌ها از محتوای بالا
+    marginTop: 10 
   },
   btn: { 
     flex: 1, 
