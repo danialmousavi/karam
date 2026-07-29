@@ -10,11 +10,13 @@ import {
   Platform,
   StyleSheet,
   Switch,
+  ScrollView,
 } from 'react-native';
 import { useTheme } from '../../context/ThemeContext';
 import { Category } from '../../services/database';
 import TimePicker from '../TimePicker';
 import CategoryChip from '../home/CategoryChip';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 interface AddTaskModalProps {
   visible: boolean;
@@ -52,101 +54,133 @@ export default function AddTaskModal({
   onMinuteChange,
 }: AddTaskModalProps) {
   const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
 
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
+      {/* لایه اول: فقط مخصوص مدیریت فضای کیبورد */}
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={[styles.modalOverlay, { backgroundColor: 'rgba(0,0,0,0.4)' }]}
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        <View style={[styles.modalContent, { backgroundColor: colors.surface }]}>
-          <View style={[styles.modalDragHandle, { backgroundColor: colors.border }]} />
-          <Text style={[styles.modalTitle, { color: colors.primaryDark }]}>ثبت کار برای {selectedDate} ✨</Text>
-
-          <TextInput
+        {/* لایه دوم: پس‌زمینه تاریک و هل دادن محتوا به پایین */}
+        <View style={[styles.modalOverlay, { backgroundColor: 'rgba(0,0,0,0.4)' }]}>
+          
+          {/* لایه سوم: باکس اصلی مودال */}
+          <View
             style={[
-              styles.input,
+              styles.modalContent,
               {
-                backgroundColor: colors.background,
-                borderColor: colors.border,
-                color: colors.text,
+                backgroundColor: colors.surface,
+                paddingBottom: insets.bottom > 0 ? insets.bottom + 16 : 24,
+                maxHeight: '90%', // به جای ارتفاع ثابت، از درصد استفاده می‌کنیم تا از استاتوس‌بار بالاتر نره
               },
             ]}
-            placeholder="می‌خوای چیکار کنی؟..."
-            placeholderTextColor={colors.textMuted}
-            value={newTaskTitle}
-            onChangeText={setNewTaskTitle}
-            autoFocus={true}
-          />
+          >
+            {/* خط درگ بالای مودال */}
+            <View style={[styles.modalDragHandle, { backgroundColor: colors.border }]} />
 
-          <Text style={[styles.sectionLabel, { color: colors.text }]}>دسته‌بندی رو انتخاب کن:</Text>
-          <View style={styles.horizontalListContainer}>
-            <FlatList
-              horizontal
-              inverted
-              showsHorizontalScrollIndicator={false}
-              data={categories}
-              keyExtractor={(item) => item.id}
-              contentContainerStyle={styles.horizontalScrollContent}
-              renderItem={({ item: cat }) => (
-                <CategoryChip
-                  category={cat}
-                  isSelected={selectedCategoryId === cat.id}
-                  onSelect={setSelectedCategoryId}
+            {/* اسکرول ویو با flexShrink که اجازه میده با باز شدن کیبورد، محتوا فشرده و اسکرول‌دار بشه */}
+            <ScrollView
+              style={{ flexShrink: 1 }} 
+              contentContainerStyle={styles.scrollContent}
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+            >
+              <Text style={[styles.modalTitle, { color: colors.primaryDark }]}>
+                ثبت کار برای {selectedDate} ✨
+              </Text>
+
+              <TextInput
+                style={[
+                  styles.input,
+                  {
+                    backgroundColor: colors.background,
+                    borderColor: colors.border,
+                    color: colors.text,
+                  },
+                ]}
+                placeholder="می‌خوای چیکار کنی؟..."
+                placeholderTextColor={colors.textMuted}
+                value={newTaskTitle}
+                onChangeText={setNewTaskTitle}
+                autoFocus={true}
+              />
+
+              <Text style={[styles.sectionLabel, { color: colors.text }]}>دسته‌بندی رو انتخاب کن:</Text>
+              <View style={styles.horizontalListContainer}>
+                <FlatList
+                  horizontal
+                  inverted
+                  showsHorizontalScrollIndicator={false}
+                  data={categories}
+                  keyExtractor={(item) => item.id}
+                  contentContainerStyle={styles.horizontalScrollContent}
+                  renderItem={({ item: cat }) => (
+                    <CategoryChip
+                      category={cat}
+                      isSelected={selectedCategoryId === cat.id}
+                      onSelect={setSelectedCategoryId}
+                    />
+                  )}
                 />
-              )}
-            />
-          </View>
+              </View>
 
-          <View style={[
-            styles.reminderContainer,
-            {
-              backgroundColor: colors.background,
-              borderColor: colors.border,
-              borderWidth: 1,
-            },
-          ]}>
-            <View style={styles.reminderHeader}>
-              <Switch
-                value={isReminderEnabled}
-                onValueChange={setIsReminderEnabled}
-                trackColor={{ false: colors.border, true: colors.primaryDark }}
-                thumbColor={colors.surface}
-              />
-              <Text style={[styles.sectionLabel, { color: colors.text, marginBottom: 0 }]}>یادآوری با آلارم 🔔</Text>
-            </View>
+              <View
+                style={[
+                  styles.reminderContainer,
+                  {
+                    backgroundColor: colors.background,
+                    borderColor: colors.border,
+                    borderWidth: 1,
+                  },
+                ]}
+              >
+                <View style={styles.reminderHeader}>
+                  <Switch
+                    value={isReminderEnabled}
+                    onValueChange={setIsReminderEnabled}
+                    trackColor={{ false: colors.border, true: colors.primaryDark }}
+                    thumbColor={colors.surface}
+                  />
+                  <Text style={[styles.sectionLabel, { color: colors.text, marginBottom: 0 }]}>
+                    یادآوری با آلارم 🔔
+                  </Text>
+                </View>
 
-            {isReminderEnabled && (
-              <TimePicker
-                selectedHour={selectedHour}
-                selectedMinute={selectedMinute}
-                onHourChange={onHourChange}
-                onMinuteChange={onMinuteChange}
-              />
-            )}
-          </View>
+                {isReminderEnabled && (
+                  <TimePicker
+                    selectedHour={selectedHour}
+                    selectedMinute={selectedMinute}
+                    onHourChange={onHourChange}
+                    onMinuteChange={onMinuteChange}
+                  />
+                )}
+              </View>
 
-          <View style={styles.modalButtons}>
-            <TouchableOpacity
-              style={[
-                styles.btn,
-                styles.btnCancel,
-                {
-                  backgroundColor: colors.background,
-                  borderColor: colors.border,
-                  borderWidth: 1,
-                },
-              ]}
-              onPress={onClose}
-            >
-              <Text style={[styles.btnCancelText, { color: colors.textMuted }]}>انصراف</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.btn, styles.btnSave, { backgroundColor: colors.primaryDark }]}
-              onPress={onSave}
-            >
-              <Text style={[styles.btnSaveText, { color: colors.surface }]}>ثبت کار</Text>
-            </TouchableOpacity>
+              <View style={styles.modalButtons}>
+                <TouchableOpacity
+                  style={[
+                    styles.btn,
+                    styles.btnCancel,
+                    {
+                      backgroundColor: colors.background,
+                      borderColor: colors.border,
+                      borderWidth: 1,
+                    },
+                  ]}
+                  onPress={onClose}
+                >
+                  <Text style={[styles.btnCancelText, { color: colors.textMuted }]}>انصراف</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.btn, styles.btnSave, { backgroundColor: colors.primaryDark }]}
+                  onPress={onSave}
+                >
+                  <Text style={[styles.btnSaveText, { color: colors.surface }]}>ثبت کار</Text>
+                </TouchableOpacity>
+              </View>
+            </ScrollView>
           </View>
         </View>
       </KeyboardAvoidingView>
@@ -162,8 +196,12 @@ const styles = StyleSheet.create({
   modalContent: {
     borderTopLeftRadius: 30,
     borderTopRightRadius: 30,
-    padding: 24,
-    minHeight: 480,
+    paddingHorizontal: 24,
+    paddingTop: 10,
+    // minHeight: 480, -> این خط کاملاً حذف شد تا جلوی کوچیک شدن مودال رو نگیره
+  },
+  scrollContent: {
+    paddingBottom: 20,
   },
   modalDragHandle: {
     width: 40,
@@ -208,6 +246,7 @@ const styles = StyleSheet.create({
   modalButtons: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    marginTop: 20, 
   },
   btn: {
     flex: 1,

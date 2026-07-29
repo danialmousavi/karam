@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, Platform } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import moment from 'moment-jalaali';
 import { useIsFocused } from '@react-navigation/native';
 import { useTheme } from '../../context/ThemeContext';
@@ -16,7 +17,9 @@ moment.loadPersian({ dialect: 'persian-modern', usePersianDigits: false });
 
 export default function HomeScreen() {
   const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
   const isFocused = useIsFocused();
+  
   const [tasks, setTasks] = useState<Task[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [selectedDate, setSelectedDate] = useState<string>(moment().format('jYYYY/jMM/jDD'));
@@ -82,7 +85,8 @@ export default function HomeScreen() {
     });
   };
 
-  const handleAddTask = async () => {
+  const handleAddTask = () => {
+    // ۱. اعتبارسنجی‌ها
     if (!newTaskTitle.trim()) {
       showAlert('عنوان تسک خالیه! ⚠️', 'لطفاً بنویس که دقیقاً چه کاری می‌خوای انجام بدی.', 'warning');
       return;
@@ -96,33 +100,53 @@ export default function HomeScreen() {
       return;
     }
 
-    let notifId: string | null = null;
-    let timeString: string | null = null;
+    // ۲. کپی کردن مقادیر
+    const titleToSave = newTaskTitle.trim();
+    const categoryIdToSave = selectedCategoryId;
+    const datesToSave = [...selectedNewTaskDates];
+    const isReminder = isReminderEnabled;
+    const hourToSave = selectedHour;
+    const minuteToSave = selectedMinute;
 
-    if (isReminderEnabled) {
-      timeString = `${selectedHour.toString().padStart(2, '0')}:${selectedMinute
-        .toString()
-        .padStart(2, '0')}`;
-      notifId =
-        (await scheduleTaskNotification(newTaskTitle.trim(), selectedNewTaskDates[0], timeString)) ||
-        null;
-    }
-
-    await db.addTask({
-      title: newTaskTitle.trim(),
-      categoryId: selectedCategoryId,
-      dates: selectedNewTaskDates,
-      time: timeString,
-      notifId: notifId,
-    });
-
+    // ۳. ریست فرم و بستن مودال (سریع)
     setNewTaskTitle('');
     setSelectedNewTaskDates([moment().format('jYYYY/jMM/jDD')]);
     setIsReminderEnabled(false);
     setSelectedHour(moment().hour());
     setSelectedMinute(moment().minute());
     setModalVisible(false);
-    loadData();
+
+    // ۴. عملیات سنگین در پس‌زمینه
+    (async () => {
+      try {
+        let notifId: string | null = null;
+        let timeString: string | null = null;
+
+        if (isReminder) {
+          timeString = `${hourToSave.toString().padStart(2, '0')}:${minuteToSave
+            .toString()
+            .padStart(2, '0')}`;
+            
+          notifId =
+            (await scheduleTaskNotification(titleToSave, datesToSave[0], timeString)) ||
+            null;
+        }
+
+        await db.addTask({
+          title: titleToSave,
+          categoryId: categoryIdToSave,
+          dates: datesToSave,
+          time: timeString,
+          notifId: notifId,
+        });
+
+        await loadData();
+      } catch (error) {
+        console.error('Error saving task:', error);
+        // نمایش خطا به کاربر
+        showAlert('❌', 'خطا در ثبت کار! لطفاً دوباره تلاش کن.', 'danger');
+      }
+    })();
   };
 
   const handleToggleTask = async (id: string) => {
@@ -164,13 +188,21 @@ export default function HomeScreen() {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <View style={[
+      styles.container,
+      {
+        backgroundColor: colors.background,
+        paddingTop: insets.top,
+      }
+    ]}>
       <HomeHeader />
+      
       <CalendarStrip
         selectedDate={selectedDate}
         onSelectDate={setSelectedDate}
         tasks={tasks}
       />
+      
       <TaskList
         tasks={currentDayTasks}
         categories={categories}
@@ -178,6 +210,7 @@ export default function HomeScreen() {
         onDeleteTask={handleDeleteRequest}
         getCategoryDetails={getCategoryDetails}
       />
+      
       <FloatingActionButton onPress={() => setModalVisible(true)} />
 
       <AddTaskModal
@@ -217,6 +250,5 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingTop: Platform.OS === 'ios' ? 60 : 40,
   },
 });
