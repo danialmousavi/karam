@@ -7,7 +7,11 @@ import {
   TextInput,
   TouchableOpacity,
   StyleSheet,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../../context/ThemeContext';
 import ColorPalette, { PASTEL_PALETTE } from './ColorPalette';
 import IconSelector, { AVAILABLE_ICONS } from './IconSelector';
@@ -36,6 +40,7 @@ export default function AddCategoryModal({
   setSelectedIcon,
 }: AddCategoryModalProps) {
   const { colors } = useTheme();
+  const insets = useSafeAreaInsets(); // دریافت فواصل امن دستگاه
 
   return (
     <Modal 
@@ -44,61 +49,86 @@ export default function AddCategoryModal({
       transparent={true} 
       onRequestClose={onClose}
     >
-      <View style={[styles.modalOverlay, { backgroundColor: 'rgba(0,0,0,0.4)' }]}>
-        <View style={[styles.modalContent, { backgroundColor: colors.surface }]}>
-          <Text style={[styles.modalTitle, { color: colors.primaryDark }]}>ایجاد دسته‌بندی جدید ✨</Text>
-
-          <TextInput
+      {/* مدیریت هوشمند کیبورد */}
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
+        <View style={[styles.modalOverlay, { backgroundColor: 'rgba(0,0,0,0.4)' }]}>
+          <View 
             style={[
-              styles.input,
-              {
-                backgroundColor: colors.background,
-                borderColor: colors.border,
-                color: colors.text,
-              },
+              styles.modalContent, 
+              { 
+                backgroundColor: colors.surface,
+                paddingBottom: insets.bottom > 0 ? insets.bottom + 16 : 24, // فاصله امن پایین
+                maxHeight: '90%', // جلوگیری از چسبیدن به سقف
+              }
             ]}
-            placeholder="نام دسته را بنویسید (مثلاً یادگیری)..."
-            placeholderTextColor={colors.textMuted}
-            value={name}
-            onChangeText={setName}
-          />
-
-          <Text style={[styles.sectionLabel, { color: colors.primaryDark }]}>انتخاب آیکون:</Text>
-          <IconSelector 
-            selectedIcon={selectedIcon} 
-            onSelect={setSelectedIcon} 
-          />
-
-          <Text style={[styles.sectionLabel, { color: colors.primaryDark }]}>انتخاب تم رنگی:</Text>
-          <ColorPalette 
-            selectedIndex={selectedColorIndex} 
-            onSelect={setSelectedColorIndex} 
-          />
-
-          <View style={styles.modalButtons}>
-            <TouchableOpacity 
-              style={[
-                styles.btn, 
-                styles.btnCancel,
-                {
-                  backgroundColor: colors.background,
-                  borderColor: colors.border,
-                  borderWidth: 1,
-                },
-              ]} 
-              onPress={onClose}
+          >
+            {/* اضافه کردن اسکرول برای زمان باز بودن کیبورد */}
+            <ScrollView
+              style={{ flexShrink: 1 }} 
+              contentContainerStyle={{ paddingBottom: 20 }}
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled" // کلیک روی دکمه‌ها بدون نیاز به بستن کیبورد
             >
-              <Text style={[styles.btnCancelText, { color: colors.textMuted }]}>انصراف</Text>
-            </TouchableOpacity>
-            <TouchableOpacity 
-              style={[styles.btn, styles.btnSave, { backgroundColor: colors.primaryDark }]} 
-              onPress={onSave}
-            >
-              <Text style={[styles.btnSaveText, { color: colors.surface }]}>ثبت دسته</Text>
-            </TouchableOpacity>
+              <View style={[styles.modalDragHandle, { backgroundColor: colors.border }]} />
+              
+              <Text style={[styles.modalTitle, { color: colors.primaryDark }]}>ایجاد دسته‌بندی جدید ✨</Text>
+
+              <TextInput
+                style={[
+                  styles.input,
+                  {
+                    backgroundColor: colors.background,
+                    borderColor: colors.border,
+                    color: colors.text,
+                  },
+                ]}
+                placeholder="نام دسته را بنویسید (مثلاً یادگیری)..."
+                placeholderTextColor={colors.textMuted}
+                value={name}
+                onChangeText={setName}
+              />
+
+              <Text style={[styles.sectionLabel, { color: colors.primaryDark }]}>انتخاب آیکون:</Text>
+              <IconSelector 
+                selectedIcon={selectedIcon} 
+                onSelect={setSelectedIcon} 
+              />
+
+              <Text style={[styles.sectionLabel, { color: colors.primaryDark }]}>انتخاب تم رنگی:</Text>
+              <ColorPalette 
+                selectedIndex={selectedColorIndex} 
+                onSelect={setSelectedColorIndex} 
+              />
+
+              <View style={styles.modalButtons}>
+                <TouchableOpacity 
+                  style={[
+                    styles.btn, 
+                    styles.btnCancel,
+                    {
+                      backgroundColor: colors.background,
+                      borderColor: colors.border,
+                      borderWidth: 1,
+                    },
+                  ]} 
+                  onPress={onClose}
+                >
+                  <Text style={[styles.btnCancelText, { color: colors.textMuted }]}>انصراف</Text>
+                </TouchableOpacity>
+                <TouchableOpacity 
+                  style={[styles.btn, styles.btnSave, { backgroundColor: colors.primaryDark }]} 
+                  onPress={onSave}
+                >
+                  <Text style={[styles.btnSaveText, { color: colors.surface }]}>ثبت دسته</Text>
+                </TouchableOpacity>
+              </View>
+            </ScrollView>
           </View>
         </View>
-      </View>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }
@@ -111,8 +141,16 @@ const styles = StyleSheet.create({
   modalContent: {
     borderTopLeftRadius: 30,
     borderTopRightRadius: 30,
-    padding: 24,
-    minHeight: 450,
+    paddingHorizontal: 24,
+    paddingTop: 10,
+    // minHeight: 450, -> حذف شد تا استایل‌های کیبورد به هم نریزه
+  },
+  modalDragHandle: { 
+    width: 40, 
+    height: 5, 
+    borderRadius: 3, 
+    alignSelf: 'center', 
+    marginBottom: 20 
   },
   modalTitle: {
     fontFamily: 'Vazir-Bold',
@@ -138,6 +176,7 @@ const styles = StyleSheet.create({
   modalButtons: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    marginTop: 10,
   },
   btn: {
     flex: 1,

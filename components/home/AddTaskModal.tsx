@@ -9,10 +9,12 @@ import {
   KeyboardAvoidingView,
   Platform,
   StyleSheet,
+  ScrollView, // اضافه شد
 } from 'react-native';
 import moment from 'moment-jalaali';
 import { useTheme } from '../../context/ThemeContext';
 import { Category } from '../../services/database';
+import { useSafeAreaInsets } from 'react-native-safe-area-context'; // اضافه شد
 import CategoryChip from './CategoryChip';
 import DateChip from './DateChip';
 import ReminderSection from './ReminderSection';
@@ -59,6 +61,7 @@ export default function AddTaskModal({
   onSelectAllWeek,
 }: AddTaskModalProps) {
   const { colors } = useTheme();
+  const insets = useSafeAreaInsets(); // گرفتن فواصل امن گوشی
 
   const calendarDays = useMemo(() => {
     const days = [];
@@ -93,106 +96,130 @@ export default function AddTaskModal({
 
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
+      {/* لایه اول: فقط مخصوص مدیریت فضای کیبورد */}
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={[styles.modalOverlay, { backgroundColor: 'rgba(0,0,0,0.4)' }]}
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        <View style={[styles.modalContent, { backgroundColor: colors.surface }]}>
-          <View style={[styles.modalDragHandle, { backgroundColor: colors.border }]} />
-          <Text style={[styles.modalTitle, { color: colors.primaryDark }]}>ثبت کار جدید ✨</Text>
-
-          <TextInput
+        {/* لایه دوم: پس‌زمینه تاریک */}
+        <View style={[styles.modalOverlay, { backgroundColor: 'rgba(0,0,0,0.4)' }]}>
+          
+          {/* لایه سوم: باکس اصلی مودال */}
+          <View 
             style={[
-              styles.input,
-              {
-                backgroundColor: colors.background,
-                borderColor: colors.border,
-                color: colors.text,
-              },
+              styles.modalContent, 
+              { 
+                backgroundColor: colors.surface,
+                paddingBottom: insets.bottom > 0 ? insets.bottom + 16 : 24, // فاصله امن پایین
+                maxHeight: '90%', // جلوگیری از رفتن به زیر استاتوس‌بار
+              }
             ]}
-            placeholder="می‌خوای چیکار کنی؟..."
-            placeholderTextColor={colors.textMuted}
-            value={newTaskTitle}
-            onChangeText={setNewTaskTitle}
-          />
+          >
+            {/* خط درگ بالای مودال */}
+            <View style={[styles.modalDragHandle, { backgroundColor: colors.border }]} />
 
-          <Text style={[styles.sectionLabel, { color: colors.text }]}>دسته‌بندی رو انتخاب کن:</Text>
-          <View style={styles.horizontalListContainer}>
-            <FlatList
-              horizontal
-              inverted
-              showsHorizontalScrollIndicator={false}
-              data={categories}
-              keyExtractor={(item) => item.id}
-              contentContainerStyle={styles.horizontalScrollContent}
-              removeClippedSubviews={true} // بهینه‌سازی مموری
-              initialNumToRender={5}
-              renderItem={({ item: cat }) => (
-                <CategoryChip
-                  category={cat}
-                  isSelected={selectedCategoryId === cat.id}
-                  onSelect={setSelectedCategoryId}
-                />
-              )}
-            />
-          </View>
-
-          <View style={styles.dateSelectionHeader}>
-            <Text style={[styles.sectionLabel, { color: colors.text }]}>برای چه روزهایی؟</Text>
-            <TouchableOpacity onPress={onSelectAllWeek}>
-              <Text style={[styles.selectAllText, { color: colors.primaryDark }]}>+ تا آخر هفته (جمعه)</Text>
-            </TouchableOpacity>
-          </View>
-
-          <View style={styles.horizontalListContainer}>
-            <FlatList
-              horizontal
-              inverted
-              showsHorizontalScrollIndicator={false}
-              data={modalDays}
-              keyExtractor={(item) => item.fullDate}
-              contentContainerStyle={styles.horizontalScrollContent}
-              removeClippedSubviews={true} // بهینه‌سازی مموری
-              initialNumToRender={7}
-              maxToRenderPerBatch={7}
-              windowSize={5}
-              renderItem={({ item: day }) => (
-                <DateChip
-                  day={day}
-                  isSelected={selectedNewTaskDates.includes(day.fullDate)}
-                  onSelect={toggleNewTaskDate}
-                />
-              )}
-            />
-          </View>
-
-          {/* کامپوننت ریمایندر بهینه شده */}
-          <ReminderSection
-            isEnabled={isReminderEnabled}
-            onToggle={setIsReminderEnabled}
-            selectedHour={selectedHour}
-            selectedMinute={selectedMinute}
-            onHourChange={onHourChange}
-            onMinuteChange={onMinuteChange}
-          />
-
-          <View style={styles.modalButtons}>
-            <TouchableOpacity
-              style={[
-                styles.btn,
-                styles.btnCancel,
-                { backgroundColor: colors.background, borderColor: colors.border, borderWidth: 1 },
-              ]}
-              onPress={onClose}
+            {/* اسکرول ویو برای زمان باز بودن کیبورد */}
+            <ScrollView
+              style={{ flexShrink: 1 }} 
+              contentContainerStyle={{ paddingBottom: 20 }}
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled" // مهم برای کلیک روی دکمه‌ها بدون نیاز به بستن کیبورد
             >
-              <Text style={[styles.btnCancelText, { color: colors.textMuted }]}>انصراف</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.btn, styles.btnSave, { backgroundColor: colors.primaryDark }]}
-              onPress={onSave}
-            >
-              <Text style={[styles.btnSaveText, { color: colors.surface }]}>ثبت کار</Text>
-            </TouchableOpacity>
+              <Text style={[styles.modalTitle, { color: colors.primaryDark }]}>ثبت کار جدید ✨</Text>
+
+              <TextInput
+                style={[
+                  styles.input,
+                  {
+                    backgroundColor: colors.background,
+                    borderColor: colors.border,
+                    color: colors.text,
+                  },
+                ]}
+                placeholder="می‌خوای چیکار کنی؟..."
+                placeholderTextColor={colors.textMuted}
+                value={newTaskTitle}
+                onChangeText={setNewTaskTitle}
+              />
+
+              <Text style={[styles.sectionLabel, { color: colors.text }]}>دسته‌بندی رو انتخاب کن:</Text>
+              <View style={styles.horizontalListContainer}>
+                <FlatList
+                  horizontal
+                  inverted
+                  showsHorizontalScrollIndicator={false}
+                  data={categories}
+                  keyExtractor={(item) => item.id}
+                  contentContainerStyle={styles.horizontalScrollContent}
+                  removeClippedSubviews={true}
+                  initialNumToRender={5}
+                  renderItem={({ item: cat }) => (
+                    <CategoryChip
+                      category={cat}
+                      isSelected={selectedCategoryId === cat.id}
+                      onSelect={setSelectedCategoryId}
+                    />
+                  )}
+                />
+              </View>
+
+              <View style={styles.dateSelectionHeader}>
+                <Text style={[styles.sectionLabel, { color: colors.text }]}>برای چه روزهایی؟</Text>
+                <TouchableOpacity onPress={onSelectAllWeek}>
+                  <Text style={[styles.selectAllText, { color: colors.primaryDark }]}>+ تا آخر هفته (جمعه)</Text>
+                </TouchableOpacity>
+              </View>
+
+              <View style={styles.horizontalListContainer}>
+                <FlatList
+                  horizontal
+                  inverted
+                  showsHorizontalScrollIndicator={false}
+                  data={modalDays}
+                  keyExtractor={(item) => item.fullDate}
+                  contentContainerStyle={styles.horizontalScrollContent}
+                  removeClippedSubviews={true}
+                  initialNumToRender={7}
+                  maxToRenderPerBatch={7}
+                  windowSize={5}
+                  renderItem={({ item: day }) => (
+                    <DateChip
+                      day={day}
+                      isSelected={selectedNewTaskDates.includes(day.fullDate)}
+                      onSelect={toggleNewTaskDate}
+                    />
+                  )}
+                />
+              </View>
+
+              <ReminderSection
+                isEnabled={isReminderEnabled}
+                onToggle={setIsReminderEnabled}
+                selectedHour={selectedHour}
+                selectedMinute={selectedMinute}
+                onHourChange={onHourChange}
+                onMinuteChange={onMinuteChange}
+              />
+
+              <View style={styles.modalButtons}>
+                <TouchableOpacity
+                  style={[
+                    styles.btn,
+                    styles.btnCancel,
+                    { backgroundColor: colors.background, borderColor: colors.border, borderWidth: 1 },
+                  ]}
+                  onPress={onClose}
+                >
+                  <Text style={[styles.btnCancelText, { color: colors.textMuted }]}>انصراف</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.btn, styles.btnSave, { backgroundColor: colors.primaryDark }]}
+                  onPress={onSave}
+                >
+                  <Text style={[styles.btnSaveText, { color: colors.surface }]}>ثبت کار</Text>
+                </TouchableOpacity>
+              </View>
+            </ScrollView>
           </View>
         </View>
       </KeyboardAvoidingView>
@@ -201,20 +228,83 @@ export default function AddTaskModal({
 }
 
 const styles = StyleSheet.create({
-  modalOverlay: { flex: 1, justifyContent: 'flex-end' },
-  modalContent: { borderTopLeftRadius: 30, borderTopRightRadius: 30, padding: 24, minHeight: 480 },
-  modalDragHandle: { width: 40, height: 5, borderRadius: 3, alignSelf: 'center', marginBottom: 20 },
-  modalTitle: { fontFamily: 'Vazir-Bold', fontSize: 18, textAlign: 'right', marginBottom: 20 },
-  input: { borderRadius: 14, padding: 16, fontFamily: 'Vazir-Bold', fontSize: 15, textAlign: 'right', marginBottom: 20, borderWidth: 1 },
-  dateSelectionHeader: { flexDirection: 'row-reverse', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
-  selectAllText: { fontFamily: 'Vazir-Bold', fontSize: 12 },
-  horizontalListContainer: { marginBottom: 24 },
-  horizontalScrollContent: { alignItems: 'center', paddingHorizontal: 4 },
-  sectionLabel: { fontFamily: 'Vazir-Bold', fontSize: 13, textAlign: 'right' },
-  modalButtons: { flexDirection: 'row', justifyContent: 'space-between' },
-  btn: { flex: 1, height: 52, borderRadius: 16, justifyContent: 'center', alignItems: 'center' },
-  btnCancel: { marginRight: 10 },
-  btnCancelText: { fontFamily: 'Vazir-Bold', fontSize: 14 },
+  modalOverlay: { 
+    flex: 1, 
+    justifyContent: 'flex-end' 
+  },
+  modalContent: { 
+    borderTopLeftRadius: 30, 
+    borderTopRightRadius: 30, 
+    paddingHorizontal: 24, 
+    paddingTop: 10,
+    // minHeight: 480 حذف شد تا با کیبورد تداخل نداشته باشه
+  },
+  modalDragHandle: { 
+    width: 40, 
+    height: 5, 
+    borderRadius: 3, 
+    alignSelf: 'center', 
+    marginBottom: 20 
+  },
+  modalTitle: { 
+    fontFamily: 'Vazir-Bold', 
+    fontSize: 18, 
+    textAlign: 'right', 
+    marginBottom: 20 
+  },
+  input: { 
+    borderRadius: 14, 
+    padding: 16, 
+    fontFamily: 'Vazir-Bold', 
+    fontSize: 15, 
+    textAlign: 'right', 
+    marginBottom: 20, 
+    borderWidth: 1 
+  },
+  dateSelectionHeader: { 
+    flexDirection: 'row-reverse', 
+    justifyContent: 'space-between', 
+    alignItems: 'center', 
+    marginBottom: 12 
+  },
+  selectAllText: { 
+    fontFamily: 'Vazir-Bold', 
+    fontSize: 12 
+  },
+  horizontalListContainer: { 
+    marginBottom: 24 
+  },
+  horizontalScrollContent: { 
+    alignItems: 'center', 
+    paddingHorizontal: 4 
+  },
+  sectionLabel: { 
+    fontFamily: 'Vazir-Bold', 
+    fontSize: 13, 
+    textAlign: 'right' 
+  },
+  modalButtons: { 
+    flexDirection: 'row', 
+    justifyContent: 'space-between',
+    marginTop: 10 // فاصله دادن دکمه‌ها از محتوای بالا
+  },
+  btn: { 
+    flex: 1, 
+    height: 52, 
+    borderRadius: 16, 
+    justifyContent: 'center', 
+    alignItems: 'center' 
+  },
+  btnCancel: { 
+    marginRight: 10 
+  },
+  btnCancelText: { 
+    fontFamily: 'Vazir-Bold', 
+    fontSize: 14 
+  },
   btnSave: {},
-  btnSaveText: { fontFamily: 'Vazir-Bold', fontSize: 14 },
+  btnSaveText: { 
+    fontFamily: 'Vazir-Bold', 
+    fontSize: 14 
+  },
 });
