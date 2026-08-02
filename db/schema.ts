@@ -3,7 +3,7 @@ import { relations } from 'drizzle-orm';
 
 // ۱. جدول دسته‌بندی‌ها
 export const categories = sqliteTable('categories', {
-  id: text('id').primaryKey(), // از نوع string (UUID) تا در آینده برای کلاد سینک راحت باشد
+  id: text('id').primaryKey(),
   name: text('name').notNull(),
   color: text('color').notNull(),
   icon: text('icon').notNull(),
@@ -26,10 +26,10 @@ export const tasks = sqliteTable('tasks', {
   id: text('id').primaryKey(),
   title: text('title').notNull(),
   description: text('description'),
-  dueDate: integer('due_date'), // ذخیره تاریخ به صورت Timestamp (عدد)
+  dueDate: integer('due_date'),
   priority: text('priority').notNull(), // 'high' | 'medium' | 'low'
   status: text('status').notNull().default('pending'), // 'pending' | 'in_progress' | 'completed' | 'archived' | 'trashed'
-  categoryId: text('category_id').references(() => categories.id), // کلید خارجی
+  categoryId: text('category_id').references(() => categories.id),
   reminderTime: integer('reminder_time'),
   recurrence: text('recurrence'), // 'none', 'daily', 'weekly', 'monthly', 'custom'
   createdAt: integer('created_at').notNull(),
@@ -52,12 +52,22 @@ export const tasksToTags = sqliteTable('tasks_to_tags', {
   taskId: text('task_id').references(() => tasks.id).notNull(),
   tagId: text('tag_id').references(() => tags.id).notNull(),
 }, (t) => ({
-  pk: primaryKey({ columns: [t.taskId, t.tagId] }), // کلید اصلی ترکیبی
+  pk: primaryKey({ columns: [t.taskId, t.tagId] }),
 }));
 
-// ۶. جدول یادداشت‌ها
+// ۶. جدول پوشه‌های یادداشت
+export const noteFolders = sqliteTable('note_folders', {
+  id: text('id').primaryKey(),
+  name: text('name').notNull(),
+  color: text('color'),
+  createdAt: integer('created_at').notNull(),
+  updatedAt: integer('updated_at').notNull(),
+});
+
+// ۷. جدول یادداشت‌ها (ویرایش شده جهت اتصال به پوشه)
 export const notes = sqliteTable('notes', {
   id: text('id').primaryKey(),
+  folderId: text('folder_id').references(() => noteFolders.id).notNull(),
   title: text('title').notNull(),
   content: text('content'),
   color: text('color'),
@@ -68,10 +78,10 @@ export const notes = sqliteTable('notes', {
   trashedAt: integer('trashed_at'),
 });
 
-// ۷. جدول جلسات تمرکز (Pomodoro)
+// ۸. جدول جلسات تمرکز (Pomodoro)
 export const focusSessions = sqliteTable('focus_sessions', {
   id: text('id').primaryKey(),
-  duration: integer('duration').notNull(), // مدت زمان به دقیقه
+  duration: integer('duration').notNull(),
   completedAt: integer('completed_at').notNull(),
 });
 
@@ -107,5 +117,16 @@ export const subtasksRelations = relations(subtasks, ({ one }) => ({
   task: one(tasks, {
     fields: [subtasks.taskId],
     references: [tasks.id],
+  }),
+}));
+
+export const noteFoldersRelations = relations(noteFolders, ({ many }) => ({
+  notes: many(notes),
+}));
+
+export const notesRelations = relations(notes, ({ one }) => ({
+  folder: one(noteFolders, {
+    fields: [notes.folderId],
+    references: [noteFolders.id],
   }),
 }));

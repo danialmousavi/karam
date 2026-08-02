@@ -1,3 +1,4 @@
+// app/(tabs)/_layout.tsx
 import { Tabs } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { Platform } from 'react-native';
@@ -49,6 +50,15 @@ export default function TabLayout() {
         options={{
           title: 'تنظیمات',
           tabBarIcon: ({ color }) => <Feather name="settings" size={22} color={color} />,
+        }}
+      />
+
+      {/* 🌟 این تب جدید اضافه شد 🌟 */}
+      <Tabs.Screen
+        name="notes"
+        options={{
+          title: 'یادداشت',
+          tabBarIcon: ({ color }) => <Feather name="file-text" size={22} color={color} />,
         }}
       />
 
