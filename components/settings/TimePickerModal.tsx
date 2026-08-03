@@ -1,4 +1,3 @@
-// components/settings/TimePickerModal.tsx
 import React from 'react';
 import {
   Modal,

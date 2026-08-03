@@ -1,4 +1,3 @@
-// components/notes/AddFolderModal.tsx
 import React from 'react';
 import {
   Modal,
@@ -13,7 +12,6 @@ import {
 } from 'react-native';
 import { useTheme } from '../../context/ThemeContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-// 👇 مسیر این ایمپورت رو چک کن که به درستی به کامپوننت پالت رنگ تسک‌هات اشاره کنه
 import ColorPalette from '../categories/ColorPalette'; 
 
 interface AddFolderModalProps {
@@ -22,8 +20,8 @@ interface AddFolderModalProps {
   onSave: () => void;
   folderName: string;
   setFolderName: (text: string) => void;
-  selectedColorIndex: number; // 🌟 اضافه شد
-  setSelectedColorIndex: (index: number) => void; // 🌟 اضافه شد
+  selectedColorIndex: number; 
+  setSelectedColorIndex: (index: number) => void;
 }
 
 export default function AddFolderModal({

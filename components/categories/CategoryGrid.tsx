@@ -1,4 +1,3 @@
-// components/categories/CategoryGrid.tsx
 import React from 'react';
 import { FlatList, StyleSheet } from 'react-native';
 import { useTheme } from '../../context/ThemeContext';

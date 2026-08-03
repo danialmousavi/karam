@@ -1,4 +1,3 @@
-// components/categories/IconSelector.tsx
 import React from 'react';
 import { ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
 import { Feather } from '@expo/vector-icons';

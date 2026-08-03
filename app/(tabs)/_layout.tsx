@@ -1,4 +1,3 @@
-// app/(tabs)/_layout.tsx
 import { Tabs } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { Platform } from 'react-native';

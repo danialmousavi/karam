@@ -1,4 +1,3 @@
-// components/categories/ColorPalette.tsx
 import React from 'react';
 import { View, TouchableOpacity, StyleSheet } from 'react-native';
 import { useTheme } from '../../context/ThemeContext';

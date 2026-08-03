@@ -1,4 +1,3 @@
-// app/_layout.tsx
 import { useEffect } from 'react';
 import { View, Text, ActivityIndicator } from 'react-native';
 import { Stack } from 'expo-router';

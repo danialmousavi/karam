@@ -1,4 +1,3 @@
-// components/categories/AddCategoryModal.tsx
 import React from 'react';
 import {
   Modal,

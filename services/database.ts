@@ -1,4 +1,3 @@
-// مسیر فایل: services/database.ts
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import moment from 'moment-jalaali';
 import { cancelNotification } from './notifications';
