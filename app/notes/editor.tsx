@@ -5,8 +5,7 @@ import {
   StyleSheet, 
   TouchableOpacity, 
   KeyboardAvoidingView,
-  Platform,
-  ScrollView
+  Platform
 } from 'react-native';
 import { useLocalSearchParams, useRouter, useNavigation } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
@@ -68,13 +67,11 @@ export default function NoteEditorScreen() {
   }, [navigation, hasUnsavedChanges, title, content]);
 
   return (
-    /* 🌟 ویو اصلی که از فلش سفید در حالت دارک مود جلوگیری می‌کنه */
     <View style={[styles.rootContainer, { backgroundColor: colors.background }]}>
       <KeyboardAvoidingView 
         style={styles.container}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        {/* هدر */}
         <View style={[styles.header, { borderBottomColor: colors.border, paddingTop: insets.top + 10 }]}>
           <TouchableOpacity 
             style={styles.headerBtn} 
@@ -91,12 +88,8 @@ export default function NoteEditorScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* 🌟 اسکرول ویو برای متون طولانی شبیه Word */}
-        <ScrollView 
-          style={{ flex: 1 }}
-          contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 60 }}
-          keyboardShouldPersistTaps="handled"
-        >
+        {/* 🌟 محتوای ادیتور: بدون اسکرول‌ویو تا خود اینپوت هندلش کنه */}
+        <View style={styles.inputsContainer}>
           <TextInput
             style={[styles.titleInput, { color: colors.text }]}
             placeholder="عنوان..."
@@ -112,11 +105,10 @@ export default function NoteEditorScreen() {
             placeholderTextColor={colors.textMuted}
             value={content}
             onChangeText={setContent}
-            multiline
-            scrollEnabled={false} /* این باعث میشه تکست‌اینپوت خودش اسکرول نخوره بلکه بزرگ بشه و اسکرول کل صفحه کار کنه */
+            multiline={true}
             textAlignVertical="top" 
           />
-        </ScrollView>
+        </View>
 
         <CustomAlert
           visible={showExitAlert}
@@ -147,7 +139,7 @@ export default function NoteEditorScreen() {
 
 const styles = StyleSheet.create({
   rootContainer: {
-    flex: 1, 
+    flex: 1,
   },
   container: { 
     flex: 1 
@@ -161,6 +153,10 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
   },
   headerBtn: { padding: 8 },
+  inputsContainer: {
+    flex: 1, 
+    paddingHorizontal: 20,
+  },
   titleInput: {
     fontFamily: 'Vazir-Bold',
     fontSize: 28,
@@ -169,11 +165,12 @@ const styles = StyleSheet.create({
     textAlign: 'right',
   },
   contentInput: {
+    flex: 1, 
     fontFamily: 'Vazir',
     fontSize: 16,
     lineHeight: 28,
     paddingTop: 10,
-    minHeight: 200, 
+    paddingBottom: 20,
     textAlign: 'right',
   },
 });
