@@ -5,7 +5,8 @@ import {
   StyleSheet, 
   TouchableOpacity, 
   KeyboardAvoidingView,
-  Platform
+  Platform,
+  ScrollView
 } from 'react-native';
 import { useLocalSearchParams, useRouter, useNavigation } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
@@ -68,9 +69,10 @@ export default function NoteEditorScreen() {
 
   return (
     <View style={[styles.rootContainer, { backgroundColor: colors.background }]}>
+      {/* 🌟 تغییر رفتار KeyboardAvoidingView برای هندل کردن اندروید */}
       <KeyboardAvoidingView 
         style={styles.container}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
         <View style={[styles.header, { borderBottomColor: colors.border, paddingTop: insets.top + 10 }]}>
           <TouchableOpacity 
@@ -88,8 +90,13 @@ export default function NoteEditorScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* 🌟 محتوای ادیتور: بدون اسکرول‌ویو تا خود اینپوت هندلش کنه */}
-        <View style={styles.inputsContainer}>
+        {/* 🌟 استفاده از ScrollView با flexGrow و پدینگ پایین برای جلوگیری از مخفی شدن زیر کیبورد */}
+        <ScrollView 
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={true}
+        >
           <TextInput
             style={[styles.titleInput, { color: colors.text }]}
             placeholder="عنوان..."
@@ -106,9 +113,10 @@ export default function NoteEditorScreen() {
             value={content}
             onChangeText={setContent}
             multiline={true}
+            scrollEnabled={false} // این گزینه باعث میشه خود اینپوت بزرگ بشه و صفحه اسکرول بخوره
             textAlignVertical="top" 
           />
-        </View>
+        </ScrollView>
 
         <CustomAlert
           visible={showExitAlert}
@@ -153,9 +161,13 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
   },
   headerBtn: { padding: 8 },
-  inputsContainer: {
-    flex: 1, 
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1, // باعث میشه تمام صفحه رو پر کنه
     paddingHorizontal: 20,
+    paddingBottom: 120, // 🌟 این فضای خالی مطمئن میشه وقتی کیبورد بازه، میتونی تا آخر اسکرول کنی
   },
   titleInput: {
     fontFamily: 'Vazir-Bold',
@@ -165,12 +177,12 @@ const styles = StyleSheet.create({
     textAlign: 'right',
   },
   contentInput: {
-    flex: 1, 
+    flex: 1, // بقیه فضا رو کامل میگیره
     fontFamily: 'Vazir',
     fontSize: 16,
     lineHeight: 28,
     paddingTop: 10,
-    paddingBottom: 20,
+    minHeight: 300, // یه حداقل ارتفاع میدیم که محدوده کلیک بزرگی داشته باشه
     textAlign: 'right',
   },
 });

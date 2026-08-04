@@ -38,9 +38,10 @@ export default function AddFolderModal({
 
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
+      {/* 🌟 تغییر behavior برای حل مشکل رفتن زیر کیبورد در اندروید */}
       <KeyboardAvoidingView
         style={{ flex: 1 }}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'padding'} 
       >
         <View style={[styles.modalOverlay, { backgroundColor: 'rgba(0,0,0,0.4)' }]}>
           <View 
@@ -76,10 +77,9 @@ export default function AddFolderModal({
                 placeholderTextColor={colors.textMuted}
                 value={folderName}
                 onChangeText={setFolderName}
-                autoFocus
+                autoFocus={true} // 🌟 این رو true گذاشتیم که به محض باز شدن مودال، کیبورد بیاد بالا
               />
 
-              {/* 🌟 بخش انتخاب رنگ اضافه شد */}
               <Text style={[styles.sectionLabel, { color: colors.primaryDark }]}>انتخاب رنگ پوشه:</Text>
               <ColorPalette 
                 selectedIndex={selectedColorIndex} 
