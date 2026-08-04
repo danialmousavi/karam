@@ -1,150 +1,176 @@
-import React, { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useFocusEffect } from '@react-navigation/native';
+import React, { useState, useEffect } from 'react';
+import { 
+  View, 
+  TextInput, 
+  StyleSheet, 
+  TouchableOpacity, 
+  KeyboardAvoidingView,
+  Platform
+} from 'react-native';
+import { useLocalSearchParams, useRouter, useNavigation } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-
-import { db, Note } from '../../services/database';
 import { useTheme } from '../../context/ThemeContext';
-import NoteCard from '../../components/notes/NoteCard';
-import CustomAlert from '../../components/CustomAlert';
+import { db } from '../../services/database';
+import CustomAlert from '../../components/CustomAlert'; 
 
-export default function FolderNotesScreen() {
+export default function NoteEditorScreen() {
   const router = useRouter();
+  const navigation = useNavigation();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
-  
-  const { id, name } = useLocalSearchParams<{ id: string; name: string }>();
 
-  const [notes, setNotes] = useState<Note[]>([]);
-  
-  const [alertConfig, setAlertConfig] = useState({
-    visible: false,
-    noteIdToDelete: '',
-  });
+  const { folderId, noteId, initialTitle, initialContent } = useLocalSearchParams<{
+    folderId: string;
+    noteId?: string;
+    initialTitle?: string;
+    initialContent?: string;
+  }>();
 
-  const loadData = async () => {
-    if (!id) return;
-    const notesData = await db.getNotes(id);
-    setNotes(notesData);
+  const [title, setTitle] = useState(initialTitle || '');
+  const [content, setContent] = useState(initialContent || '');
+  
+  const [showExitAlert, setShowExitAlert] = useState(false);
+  const [pendingAction, setPendingAction] = useState<any>(null);
+
+  const hasUnsavedChanges = title !== (initialTitle || '') || content !== (initialContent || '');
+
+  const saveNoteToDb = async () => {
+    if (!title.trim() && !content.trim()) {
+      return false; 
+    }
+
+    if (noteId) {
+      await db.updateNote(noteId, { title: title.trim(), content: content.trim() });
+    } else if (folderId) {
+      const finalTitle = title.trim() || (content.trim().split(' ').slice(0, 3).join(' ') + '...');
+      await db.addNote(folderId, finalTitle, content.trim());
+    }
+    return true;
   };
 
-  useFocusEffect(
-    useCallback(() => {
-      loadData();
-    }, [id])
-  );
-
-  const confirmDelete = async () => {
-    await db.deleteNote(alertConfig.noteIdToDelete);
-    setAlertConfig({ visible: false, noteIdToDelete: '' });
-    loadData();
+  const handlePressCheck = async () => {
+    await saveNoteToDb();
+    router.back();
   };
+
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('beforeRemove', (e) => {
+      if (!hasUnsavedChanges) return;
+
+      e.preventDefault(); 
+      setPendingAction(e.data.action); 
+      setShowExitAlert(true); 
+    });
+
+    return unsubscribe;
+  }, [navigation, hasUnsavedChanges, title, content]);
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <View style={[styles.header, { backgroundColor: colors.surface, paddingTop: insets.top + 10, borderBottomColor: colors.border }]}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <Feather name="arrow-right" size={24} color={colors.text} />
-        </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: colors.text }]}>{name || 'یادداشت‌ها'}</Text>
-      </View>
-
-      <FlatList
-        data={notes}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.listContainer}
-        ListEmptyComponent={
-          <View style={styles.emptyState}>
-            <Feather name="file-text" size={48} color={colors.border} style={{ marginBottom: 16 }} />
-            <Text style={[styles.emptyText, { color: colors.textMuted }]}>هنوز یادداشتی اینجا ننوشتی!</Text>
-          </View>
-        }
-        renderItem={({ item }) => (
-          <NoteCard 
-            note={item} 
-            onPress={() => {
-              router.push({ 
-                pathname: '/notes/editor', 
-                params: { 
-                  folderId: item.folderId, 
-                  noteId: item.id,
-                  initialTitle: item.title,
-                  initialContent: item.content
-                } 
-              });
-            }} 
-            onDelete={() => setAlertConfig({ visible: true, noteIdToDelete: item.id })}
-          />
-        )}
-      />
-
-      {/* 🌟 دکمه اکشن‌باتن اختصاصی برای همین پوشه */}
-      <TouchableOpacity
-        style={[
-          styles.fab,
-          {
-            backgroundColor: colors.primaryDark,
-            shadowColor: colors.primaryDark,
-            bottom: insets.bottom > 0 ? insets.bottom + 20 : 30, 
-          },
-        ]}
-        onPress={() => router.push({ pathname: '/notes/editor', params: { folderId: id } })}
-        activeOpacity={0.8}
+    <View style={[styles.rootContainer, { backgroundColor: colors.background }]}>
+      <KeyboardAvoidingView 
+        style={styles.container}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        <Feather name="plus" size={24} color={colors.surface} />
-      </TouchableOpacity>
+        <View style={[styles.header, { borderBottomColor: colors.border, paddingTop: insets.top + 10 }]}>
+          <TouchableOpacity 
+            style={styles.headerBtn} 
+            onPress={() => router.back()} 
+          >
+            <Feather name="arrow-right" size={24} color={colors.text} />
+          </TouchableOpacity>
 
-      <CustomAlert
-        visible={alertConfig.visible}
-        type="danger"
-        title="حذف یادداشت"
-        message="مطمئنی می‌خوای این یادداشت رو برای همیشه پاک کنی؟"
-        showCancel
-        onConfirm={confirmDelete}
-        onCancel={() => setAlertConfig({ visible: false, noteIdToDelete: '' })}
-      />
+          <TouchableOpacity 
+            style={styles.headerBtn} 
+            onPress={handlePressCheck}
+          >
+            <Feather name="check" size={24} color={colors.primaryDark} />
+          </TouchableOpacity>
+        </View>
+
+        {/* 🌟 محتوای ادیتور: بدون اسکرول‌ویو تا خود اینپوت هندلش کنه */}
+        <View style={styles.inputsContainer}>
+          <TextInput
+            style={[styles.titleInput, { color: colors.text }]}
+            placeholder="عنوان..."
+            placeholderTextColor={colors.border}
+            value={title}
+            onChangeText={setTitle}
+            autoFocus={!noteId} 
+          />
+
+          <TextInput
+            style={[styles.contentInput, { color: colors.text }]}
+            placeholder="شروع به نوشتن کنید..."
+            placeholderTextColor={colors.textMuted}
+            value={content}
+            onChangeText={setContent}
+            multiline={true}
+            textAlignVertical="top" 
+          />
+        </View>
+
+        <CustomAlert
+          visible={showExitAlert}
+          type="warning"
+          title="ذخیره تغییرات؟"
+          message="تغییراتی که دادی هنوز ذخیره نشدن. می‌خوای ذخیره‌شون کنی؟"
+          showCancel={true}
+          cancelText="خروج بدون ذخیره"
+          confirmText="ذخیره و خروج"
+          onCancel={() => {
+            setShowExitAlert(false);
+            if (pendingAction) {
+              navigation.dispatch(pendingAction);
+            }
+          }}
+          onConfirm={async () => {
+            await saveNoteToDb();
+            setShowExitAlert(false);
+            if (pendingAction) {
+              navigation.dispatch(pendingAction);
+            }
+          }}
+        />
+      </KeyboardAvoidingView>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
-  header: { 
-    flexDirection: 'row-reverse', 
-    alignItems: 'center', 
-    paddingHorizontal: 20, 
-    paddingBottom: 15,
-    borderBottomWidth: 1,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
+  rootContainer: {
+    flex: 1,
   },
-  backBtn: { padding: 4 },
-  headerTitle: { 
-    flex: 1, 
-    fontFamily: 'Vazir-Bold', 
-    fontSize: 20, 
-    textAlign: 'right', 
-    marginRight: 15 
+  container: { 
+    flex: 1 
   },
-  listContainer: { padding: 20, paddingBottom: 100 },
-  emptyState: { alignItems: 'center', marginTop: 120 },
-  emptyText: { fontFamily: 'Vazir-Bold', fontSize: 16 },
-  fab: {
-    position: 'absolute',
-    left: 28, 
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    justifyContent: 'center',
+  header: {
+    flexDirection: 'row-reverse',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    elevation: 5,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
+    paddingHorizontal: 16,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+  },
+  headerBtn: { padding: 8 },
+  inputsContainer: {
+    flex: 1, // کل فضای باقی‌مانده رو می‌گیره
+    paddingHorizontal: 20,
+  },
+  titleInput: {
+    fontFamily: 'Vazir-Bold',
+    fontSize: 28,
+    paddingTop: 20,
+    paddingBottom: 10,
+    textAlign: 'right',
+  },
+  contentInput: {
+    flex: 1, // 🌟 اینپوت اصلی بقیه فضا رو پر می‌کنه و به صورت خودکار اسکرول می‌خوره
+    fontFamily: 'Vazir',
+    fontSize: 16,
+    lineHeight: 28,
+    paddingTop: 10,
+    paddingBottom: 20,
+    textAlign: 'right',
   },
 });
