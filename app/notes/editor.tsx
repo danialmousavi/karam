@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   View, 
   TextInput, 
@@ -34,6 +34,9 @@ export default function NoteEditorScreen() {
   const [showExitAlert, setShowExitAlert] = useState(false);
   const [pendingAction, setPendingAction] = useState<any>(null);
 
+  // 🌟 اضافه کردن رفرنس برای جلوگیری از ذخیره تکراری
+  const isSaved = useRef(false);
+
   const hasUnsavedChanges = title !== (initialTitle || '') || content !== (initialContent || '');
 
   const saveNoteToDb = async () => {
@@ -51,13 +54,16 @@ export default function NoteEditorScreen() {
   };
 
   const handlePressCheck = async () => {
+    if (isSaved.current) return;
+    
     await saveNoteToDb();
+    isSaved.current = true; 
     router.back();
   };
 
   useEffect(() => {
     const unsubscribe = navigation.addListener('beforeRemove', (e) => {
-      if (!hasUnsavedChanges) return;
+      if (!hasUnsavedChanges || isSaved.current) return;
 
       e.preventDefault(); 
       setPendingAction(e.data.action); 
@@ -69,7 +75,6 @@ export default function NoteEditorScreen() {
 
   return (
     <View style={[styles.rootContainer, { backgroundColor: colors.background }]}>
-      {/* 🌟 تغییر رفتار KeyboardAvoidingView برای هندل کردن اندروید */}
       <KeyboardAvoidingView 
         style={styles.container}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -90,7 +95,6 @@ export default function NoteEditorScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* 🌟 استفاده از ScrollView با flexGrow و پدینگ پایین برای جلوگیری از مخفی شدن زیر کیبورد */}
         <ScrollView 
           style={styles.scrollView}
           contentContainerStyle={styles.scrollContent}
@@ -113,7 +117,7 @@ export default function NoteEditorScreen() {
             value={content}
             onChangeText={setContent}
             multiline={true}
-            scrollEnabled={false} // این گزینه باعث میشه خود اینپوت بزرگ بشه و صفحه اسکرول بخوره
+            scrollEnabled={false} 
             textAlignVertical="top" 
           />
         </ScrollView>
@@ -133,7 +137,11 @@ export default function NoteEditorScreen() {
             }
           }}
           onConfirm={async () => {
-            await saveNoteToDb();
+            // 🌟 اینجا هم یک بررسی امنیتی می‌ذاریم که الکی دوبار ذخیره نشه
+            if (!isSaved.current) {
+              await saveNoteToDb();
+              isSaved.current = true;
+            }
             setShowExitAlert(false);
             if (pendingAction) {
               navigation.dispatch(pendingAction);
@@ -165,9 +173,9 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    flexGrow: 1, // باعث میشه تمام صفحه رو پر کنه
+    flexGrow: 1, 
     paddingHorizontal: 20,
-    paddingBottom: 120, // 🌟 این فضای خالی مطمئن میشه وقتی کیبورد بازه، میتونی تا آخر اسکرول کنی
+    paddingBottom: 120, 
   },
   titleInput: {
     fontFamily: 'Vazir-Bold',
@@ -177,12 +185,12 @@ const styles = StyleSheet.create({
     textAlign: 'right',
   },
   contentInput: {
-    flex: 1, // بقیه فضا رو کامل میگیره
+    flex: 1, 
     fontFamily: 'Vazir',
     fontSize: 16,
     lineHeight: 28,
     paddingTop: 10,
-    minHeight: 300, // یه حداقل ارتفاع میدیم که محدوده کلیک بزرگی داشته باشه
+    minHeight: 300, 
     textAlign: 'right',
   },
 });
