@@ -1,17 +1,37 @@
-
 # 📱 کارام - اپلیکیشن مدیریت کارها و یادداشت‌ها
 
 <div align="center">
   <img src="./assets/icon.png" width="120" height="120" alt="کارام لوگو">
   <br/>
   <h3>برنامه‌ای برای مدیریت هوشمند کارها و یادداشت‌های روزانه</h3>
+  
   <p>
+    <a href="https://github.com/danialmousavi/karam/releases/tag/v1.0.0">
+      <img src="https://img.shields.io/badge/📲%20دانلود%20مستقیم%20APK-v1.0.0-2ea44f?style=for-the-badge&logo=android&logoColor=white" alt="Download APK">
+    </a>
+  </p>
+
+  <p>
+    <a href="#-دانلود-مستقیم-برنامه-apk">دانلود APK</a> •
     <a href="#-ویژگی‌ها">ویژگی‌ها</a> •
     <a href="#-تکنولوژی‌ها">تکنولوژی‌ها</a> •
     <a href="#-نصب-و-راه‌اندازی">نصب و راه‌اندازی</a> •
     <a href="#-اجرا-روی-دستگاه">اجرا روی دستگاه</a> •
     <a href="#-مشارکت">مشارکت</a>
   </p>
+</div>
+
+---
+
+## 📲 دانلود مستقیم برنامه (APK)
+
+برای نصب سریع و مستقیم اپلیکیشن روی گوشی اندرویدی خود، می‌توانید آخرین نسخه انتشار یافته را از لینک زیر دانلود کنید:
+
+<div align="center">
+
+> ### 🚀 [دانلود نسخه v1.0.0 (فایل APK)](https://github.com/danialmousavi/karam/releases/tag/v1.0.0)
+> **نصب آسان بدون نیاز به پیش‌نیاز یا سیستم توسعه**
+
 </div>
 
 ---
@@ -59,7 +79,7 @@
 
 ---
 
-## 📥 نصب و راه‌اندازی
+## 📥 نصب و راه‌اندازی (ویژه توسعه‌دهندگان)
 
 ### پیش‌نیازها
 
@@ -72,7 +92,7 @@
 
 ```bash
 # ۱. کلون کردن پروژه
-git clone https://github.com/danialmousavi/karam.git
+git clone [https://github.com/danialmousavi/karam.git](https://github.com/danialmousavi/karam.git)
 cd karam
 
 # ۲. نصب وابستگی‌ها
@@ -98,7 +118,11 @@ npx expo start
 
 ## 📱 اجرا روی دستگاه
 
-### روش اول: با اپلیکیشن Expo Go (ساده‌ترین روش)
+### روش اول: دانلود و نصب مستقیم APK (پیشنهاد شده)
+
+کافی است فایل `.apk` را از لینک [Releases v1.0.0](https://github.com/danialmousavi/karam/releases/tag/v1.0.0) دانلود کرده و مستقیماً روی گوشی اندرویدی خود نصب کنید.
+
+### روش دوم: با اپلیکیشن Expo Go
 
 1. **نصب اپلیکیشن Expo Go**:
    - [اندروید (Google Play)](https://play.google.com/store/apps/details?id=host.exp.exponent)
@@ -108,34 +132,9 @@ npx expo start
    ```bash
    npx expo start
    ```
-   یا
-   ```bash
-   npm start
-   ```
 
 3. **اتصال دستگاه**:
-   - **اسکن QR Code**: اپلیکیشن Expo Go را باز کنید و QR Code نمایش داده شده را اسکن کنید
-   - **اتصال USB**: دستگاه را با USB به کامپیوتر وصل کنید و در اپ Expo Go گزینه "Tunnel" را انتخاب کنید
-
-### روش دوم: روی شبیه‌ساز اندروید
-
-```bash
-# نصب Android Studio و تنظیم AVD
-# سپس اجرا با:
-npx expo start --android
-# یا
-npm run android
-```
-
-### روش سوم: روی شبیه‌ساز iOS (فقط در مک)
-
-```bash
-# نصب Xcode و تنظیم شبیه‌ساز
-# سپس اجرا با:
-npx expo start --ios
-# یا
-npm run ios
-```
+   - **اسکن QR Code**: اپلیکیشن Expo Go را باز کنید و QR Code نمایش داده شده در ترمینال را اسکن کنید.
 
 ---
 
@@ -227,4 +226,3 @@ npm run ios
   <p>ساخته شده با ❤️ توسط دانیال موسوی</p>
   <p>⭐ اگر این پروژه برای شما مفید بود، به آن ستاره دهید!</p>
 </div>
-```
